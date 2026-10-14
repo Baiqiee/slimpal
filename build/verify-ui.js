@@ -326,6 +326,25 @@ test('#7 首页也用「立绘 + 气泡」，点击小克有互动反馈', async
     + before.slice(0, 10) + '… → ' + after.slice(0, 10) + '…';
 });
 
+test('#8 左上角标题是角色名，不是 App 名', async () => {
+  await resetToOnboarding();
+  await seedAndEnter();
+  const v = JSON.parse(await js(`(function(){
+    var t = document.querySelector('.app > .topbar .topbar-title');
+    var s = document.querySelector('.app > .topbar .topbar-sub');
+    return JSON.stringify({
+      title: t ? t.textContent : '(没有标题)',
+      sub: s ? s.textContent : '',
+      charName: JF.chloe.active().name,
+      appNameInAbout: '减肥姬'
+    });
+  })()`));
+  assertEqual(v.title, v.charName, '左上角标题');
+  assert(v.title !== v.appNameInAbout, '左上角还是显示 App 名「减肥姬」');
+  assert(v.sub.length > 0, '问候语没了');
+  return '标题「' + v.title + '」/ 副标题「' + v.sub + '」';
+});
+
 // ---------------------------------------------------------------- 运行环境
 
 let win = null;

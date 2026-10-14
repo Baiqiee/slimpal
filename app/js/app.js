@@ -63,8 +63,9 @@
 
   function topbar() {
     var p = S.profile() || {};
+    // 左上角显示的是「角色名」，不是 App 名（App 名是"减肥姬"，在关于里看）
     var left = el('div', {}, [
-      el('div', { class: 'topbar-title', text: '减肥姬' }),
+      el('div', { class: 'topbar-title', text: JF.chloe.active().name }),
       el('div', { class: 'topbar-sub', text: U.greeting() + (p.name ? ('，' + p.name) : '') })
     ]);
     return el('div', { class: 'topbar' }, [
