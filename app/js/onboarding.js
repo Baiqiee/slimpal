@@ -56,7 +56,6 @@
 
     if (step === 'welcome') {
       say(host, 'firstMeet');
-      host.appendChild(el('div', { class: 'small center mb8', text: '这个 App 只装在你自己的设备上：不登录、不联网，数据不会离开这台机器。' }));
       navButtons(host, { label: '开始', onNext: function () { next(host); } });
 
     } else if (step === 'name') {

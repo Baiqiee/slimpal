@@ -63,8 +63,17 @@ test('#1 引导页内容上下居中', async () => {
   return '上方 ' + v.above + 'px / 下方 ' + v.below + 'px';
 });
 
-// ---------------------------------------------------------------- 运行环境
+test('#2 引导页第一屏不再出现离线说明小字', async () => {
+  await resetToOnboarding();
+  const text = await js(`document.querySelector('.onboard').textContent`);
+  assert(text.indexOf('只装在你自己的设备上') === -1, '那串离线说明小字还在');
+  assert(text.indexOf('数据不会离开这台机器') === -1, '那串离线说明小字还在');
+  // 第一屏本身要还在，别把整屏删空了
+  assert(text.indexOf('开始') !== -1, '第一屏的「开始」按钮没了，删多了');
+  return '第一屏剩余文案：' + text.replace(/\s+/g, ' ').trim().slice(0, 40);
+});
 
+// ---------------------------------------------------------------- 运行环境
 let win = null;
 const errors = [];
 
