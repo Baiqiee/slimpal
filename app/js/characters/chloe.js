@@ -207,6 +207,54 @@
     }
   };
 
+  /* 每个场景可以用哪几个立绘姿势。
+   * 选台词和选姿势用同一个随机序号，所以「换一句」的时候姿势也会跟着换，
+   * 看起来就像她真的在根据说的话换姿态。
+   *   portrait      站直、平静微笑 —— 日常、认真
+   *   alt           迈步、大笑拿水壶 —— 开心、鼓励、庆祝
+   *   back          回头 —— 害羞、撒娇、有点小情绪
+   */
+  chloe.poses = {
+    firstMeet:     ['portrait', 'alt'],
+    askName:       ['portrait'],
+    askBirthday:   ['portrait', 'back'],
+    askGender:     ['portrait'],
+    askBody:       ['portrait'],
+    askActivity:   ['alt', 'portrait'],
+    askGoal:       ['portrait', 'alt'],
+    onboardDone:   ['alt'],
+
+    greetMorning:  ['alt', 'portrait'],
+    greetNoon:     ['portrait'],
+    greetAfternoon:['portrait', 'back'],
+    greetEvening:  ['portrait'],
+    greetNight:    ['portrait', 'back'],
+
+    mealLogged:    ['portrait', 'alt'],
+    mealLoggedBig: ['portrait'],
+    overLimit:     ['portrait'],
+    nearLimit:     ['portrait'],
+
+    weightFirst:   ['portrait'],
+    weightDown:    ['alt', 'portrait'],
+    weightUp:      ['portrait', 'back'],
+    weightSame:    ['portrait'],
+    noWeightToday: ['portrait'],
+
+    streak:        ['alt'],
+    breakStreak:   ['portrait'],
+
+    diarySaved:    ['portrait', 'back'],
+    diaryEmptyToday: ['portrait'],
+
+    milestone:     ['alt'],
+    goalReached:   ['alt'],
+    birthday:      ['alt'],
+    longAbsent:    ['portrait', 'back'],
+
+    idle:          ['portrait', 'alt', 'back']
+  };
+
   JF.characters = JF.characters || {};
   JF.characters[chloe.id] = chloe;
   JF.defaultCharacterId = chloe.id;

@@ -46,7 +46,11 @@ app.whenReady().then(async () => {
 
   // ---------- 1. 首次打开进引导 ----------
   check('首次打开显示引导页', await js(`!!document.querySelector('.onboard')`));
-  check('引导显示小克形象', await js(`!!document.querySelector('.onboard-top img') && document.querySelector('.onboard-top img').naturalWidth > 0`));
+  // 第一屏现在是「立绘 + 贴着她的气泡」，不再是顶部立绘 + 下方对话框
+  check('引导显示小克形象', await js(`(function(){
+    var im = document.querySelector('.onboard .scene-portrait');
+    return !!im && im.complete && im.naturalWidth > 0;
+  })()`));
 
   // ---------- 2. 走完 8 步引导 ----------
   async function stepText() {

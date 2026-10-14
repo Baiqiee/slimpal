@@ -73,6 +73,73 @@ test('#2 引导页第一屏不再出现离线说明小字', async () => {
   return '第一屏剩余文案：' + text.replace(/\s+/g, ' ').trim().slice(0, 40);
 });
 
+test('#3 引导页第一屏改成「立绘 + 贴着她弹出的气泡」', async () => {
+  await resetToOnboarding();
+  const m = await js(`(function(){
+    var scene = document.querySelector('.onboard .scene');
+    if (!scene) return JSON.stringify({err:'没有 .scene 组件'});
+    var bubble = scene.querySelector(':scope > .scene-bubble');
+    var img    = scene.querySelector('.scene-portrait');
+    if (!bubble) return JSON.stringify({err:'气泡不在 .scene 里'});
+    if (!img)    return JSON.stringify({err:'没有立绘 .scene-portrait'});
+    var after = getComputedStyle(bubble, '::after');
+    var br = bubble.getBoundingClientRect(), ir = img.getBoundingClientRect();
+    return JSON.stringify({
+      src: img.getAttribute('src'),
+      opacity: getComputedStyle(img).opacity,
+      bubbleBottom: Math.round(br.bottom),
+      imgTop: Math.round(ir.top),
+      tailContent: after.content,
+      tailW: after.width,
+      tailBg: after.backgroundColor,
+      oldSay: document.querySelectorAll('.onboard-say').length,
+      oldTop: document.querySelectorAll('.onboard-top').length,
+      text: (scene.querySelector('.scene-text') || {}).textContent || ''
+    });
+  })()`);
+  const v = JSON.parse(m);
+  assert(!v.err, v.err);
+  assert(/portrait\.png$/.test(v.src), '第一屏用的不是全身立绘，而是 ' + v.src);
+  assert(v.opacity === '1', '立绘被冲淡了，opacity=' + v.opacity);
+  assert(v.bubbleBottom <= v.imgTop + 10,
+    '气泡没贴在立绘上方（气泡底 ' + v.bubbleBottom + 'px，立绘顶 ' + v.imgTop + 'px）');
+  assert(v.tailContent && v.tailContent !== 'none' && v.tailW !== '0px',
+    '气泡没有朝下的小尾巴（content=' + v.tailContent + ' width=' + v.tailW + '）');
+  assertEqual(v.oldSay, 0, '旧的「圆头像 + 下方对话框」还在');
+  assertEqual(v.oldTop, 0, '第一屏还留着单独的顶部立绘');
+  assert(v.text.length > 0, '气泡里没有文字');
+  return '立绘 ' + v.src.split('/').pop() + '；气泡底 ' + v.bubbleBottom + 'px ≤ 立绘顶 ' + v.imgTop + 'px';
+});
+
+test('#3 台词与立绘姿势一一对应，且真的会换姿势', async () => {
+  const m = await js(`(function(){
+    var c = JF.chloe.active();
+    var poses = c.poses || {};
+    var scenes = Object.keys(c.lines);
+    var missing = scenes.filter(function(k){ return !poses[k] || !poses[k].length; });
+    var bad = [];
+    var used = {};
+    scenes.forEach(function(s){
+      (poses[s] || []).forEach(function(p){
+        used[p] = 1;
+        if (['portrait','alt','back'].indexOf(p) === -1) bad.push(s + ':' + p);
+      });
+    });
+    // 对多姿势场景连抽 40 次，看是不是真的会换
+    var varies = false;
+    for (var i = 0; i < 40; i++) {
+      if (JF.chloe.pickLine('idle', {}, true).pose !== JF.chloe.pickLine('idle', {}, true).pose) { varies = true; break; }
+    }
+    return JSON.stringify({missing: missing, bad: bad, kinds: Object.keys(used), varies: varies, scenes: scenes.length});
+  })()`);
+  const v = JSON.parse(m);
+  assertEqual(v.missing.length, 0, '这些场景没配立绘姿势：' + v.missing.join('、'));
+  assertEqual(v.bad.length, 0, '有非法姿势名：' + v.bad.join('、'));
+  assert(v.kinds.length >= 2, '全部场景只用一种姿势，等于没换：' + v.kinds.join('、'));
+  assert(v.varies, '多姿势场景反复抽取始终是同一个姿势');
+  return v.scenes + ' 个场景，用到的姿势：' + v.kinds.join(' / ');
+});
+
 // ---------------------------------------------------------------- 运行环境
 let win = null;
 const errors = [];

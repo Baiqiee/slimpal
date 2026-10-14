@@ -50,15 +50,20 @@
     var step = STEPS[idx];
     var c = JF.chloe.active();
 
+    // 第 1 屏用「立绘 + 贴着她弹出的气泡」，不再单独放顶部立绘和下方对话框
+    if (step === 'welcome') {
+      var line = JF.chloe.pickLine('firstMeet', {}, true);
+      host.appendChild(JF.chloe.renderScene({ text: line.text, pose: line.pose, className: 'scene-onboard' }));
+      navButtons(host, { label: '开始', onNext: function () { next(host); } });
+      host.appendChild(el('div', { class: 'onboard-step', text: '第 1 / ' + STEPS.length + ' 步' }));
+      return;
+    }
+
     host.appendChild(el('div', { class: 'onboard-top' }, [
       el('img', { src: idx <= 1 ? c.assets.portrait : c.assets.chibi, alt: c.name })
     ]));
 
-    if (step === 'welcome') {
-      say(host, 'firstMeet');
-      navButtons(host, { label: '开始', onNext: function () { next(host); } });
-
-    } else if (step === 'name') {
+    if (step === 'name') {
       say(host, 'askName');
       var nameI = U.el('input', { class: 'input', type: 'text', placeholder: '我的名字 / 昵称', maxlength: 20, value: draft.name });
       host.appendChild(JF.ui.field('', nameI));

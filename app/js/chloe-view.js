@@ -33,8 +33,13 @@
     });
   }
 
-  function pick(scene, ctx, force) {
-    if (!hasLine(scene)) return '';
+  /**
+   * 选一句台词，同时决定她摆哪个姿势。
+   * 两者共用同一个随机序号：所以「换一句」时姿势也跟着换，
+   * 看起来像她在根据说的话换姿态，而不是随机抖。
+   */
+  function pickLine(scene, ctx, force) {
+    if (!hasLine(scene)) return { text: '', pose: 'portrait', index: 0 };
     var bank = active().lines[scene];
     var key = scene + '|' + U.todayKey();
     var idx;
@@ -44,7 +49,17 @@
       idx = Math.floor(Math.random() * bank.length);
       lineCache[key] = idx;
     }
-    return fill(bank[idx], ctx);
+    var poses = (active().poses && active().poses[scene]) || ['portrait'];
+    return {
+      text: fill(bank[idx], ctx),
+      pose: poses[idx % poses.length],
+      index: idx
+    };
+  }
+
+  /** 只要文本的旧接口 */
+  function pick(scene, ctx, force) {
+    return pickLine(scene, ctx, force).text;
   }
 
   // ---------- 上下文数值 ----------
@@ -198,10 +213,61 @@
     ]);
   }
 
+  // ---------- 通用场景：立绘 + 从她头顶弹出的气泡 ----------
+  /**
+   * 这是全 App 统一的"小克说话"的样子（引导页、首页、里程碑庆祝都用它）。
+   * 立绘在下面，气泡浮在她头顶上方、尾巴朝下指着她，不用另外一个小头像+对话框。
+   *
+   * opts: { text, pose, showName, onMore, onTap, className, size }
+   * 返回的节点带两个方法：setText(t) / setPose(key)
+   */
+  function renderScene(opts) {
+    opts = opts || {};
+    var c = active();
+
+    var textEl = U.el('div', { class: 'scene-text', text: opts.text || '' });
+    var bubble = U.el('div', { class: 'scene-bubble' }, [
+      opts.showName === false ? null : U.el('div', { class: 'scene-name', text: c.name }),
+      textEl,
+      opts.onMore ? U.el('div', { class: 'scene-foot' }, [
+        U.el('button', { class: 'scene-more', type: 'button', onclick: opts.onMore }, ['换一句'])
+      ]) : null
+    ].filter(Boolean));
+
+    var portrait = U.el('img', { class: 'scene-portrait', src: poseSrc(opts.pose), alt: c.name });
+    var stage = U.el('div', { class: 'scene-stage' }, [portrait]);
+
+    var root = U.el('div', {
+      class: 'scene'
+        + (opts.className ? ' ' + opts.className : '')
+        + (opts.size ? ' scene-' + opts.size : '')
+    }, [bubble, stage]);
+
+    if (opts.onTap) {
+      root.classList.add('tappable');
+      portrait.addEventListener('click', opts.onTap);
+      portrait.title = '戳一下';
+    }
+
+    root.setText = function (t) { textEl.textContent = t; };
+    root.setPose = function (k) { portrait.src = poseSrc(k); };
+    return root;
+  }
+
+  function poseSrc(key) {
+    var c = active();
+    if (key === 'alt') return c.assets.portraitAlt;
+    if (key === 'back') return c.assets.portraitBack;
+    return c.assets.portrait;
+  }
+
   JF.chloe = {
     active: active,
     facePath: facePath,
     pick: pick,
+    pickLine: pickLine,
+    renderScene: renderScene,
+    poseSrc: poseSrc,
     fill: fill,
     say: say,
     homeLine: homeLine,
