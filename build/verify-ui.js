@@ -438,6 +438,40 @@ test('#10 四个导航图标风格统一', async () => {
     '；选中色 ' + v.onStroke + ' vs 未选中 ' + v.offStroke;
 });
 
+test('#11 设置-关于：去掉说明文字，加上制作人', async () => {
+  await resetToOnboarding();
+  await seedAndEnter();
+  await js(`JF.app.openSettings(); 1`);
+  await wait(500);
+  const v = JSON.parse(await js(`(function(){
+    var cards = [].slice.call(document.querySelectorAll('.onboard .card'));
+    var about = cards.filter(function(c){
+      return /关于/.test((c.querySelector('.card-title')||{}).textContent || '');
+    })[0];
+    if (!about) return JSON.stringify({err:'设置里没有「关于」卡片'});
+    var rows = {};
+    [].slice.call(about.querySelectorAll('.kv')).forEach(function(r){
+      var k = r.querySelector('span'), val = r.querySelector('b');
+      if (k && val) rows[k.textContent] = val.textContent;
+    });
+    return JSON.stringify({
+      rows: rows,
+      text: about.textContent,
+      bodyHasNote: /完全离线|以后还会住进别的减肥姬/.test(document.querySelector('.onboard').textContent)
+    });
+  })()`));
+  assert(!v.err, v.err);
+  assert(v.text.indexOf('完全离线') === -1, '「完全离线…」那句还在关于里');
+  assert(v.text.indexOf('以后还会住进别的减肥姬') === -1, '「以后还会住进别的减肥姬」还在关于里');
+  assert(!v.bodyHasNote, '设置页别处还残留这句说明');
+  assertEqual(v.rows['制作人'], '白切', '关于里的制作人');
+  assertEqual(v.rows['App'], '减肥姬', '关于里的 App 名');
+  assert(/小克/.test(v.rows['当前角色'] || ''), '关于里的当前角色不对：' + v.rows['当前角色']);
+  await js(`(function(){var b=document.querySelector('.onboard .icon-btn'); if(b) b.click(); return 1;})()`);
+  await wait(250);
+  return '关于：' + Object.keys(v.rows).map(k => k + '=' + v.rows[k]).join(' / ');
+});
+
 // ---------------------------------------------------------------- 运行环境
 
 let win = null;

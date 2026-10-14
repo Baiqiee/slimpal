@@ -12,6 +12,9 @@
     shy: '害羞', serious: '认真', tired: '疲惫', angry: '生气', bashful: '腼腆'
   };
 
+  /** 关于页里的制作人署名 */
+  var MAKER = '白切';
+
   // ---------- 资料 ----------
   function profileSheet(nav) {
     var p = S.profile() || {};
@@ -320,7 +323,7 @@
       children: [
         el('div', { class: 'kv' }, [el('span', { text: 'App' }), el('b', { text: '减肥姬' })]),
         el('div', { class: 'kv' }, [el('span', { text: '当前角色' }), el('b', { text: c.name + ' / ' + c.nameEn })]),
-        el('div', { class: 'small mt8', text: '完全离线：不登录、不联网、不上传任何数据。以后还会住进别的减肥姬。' })
+        el('div', { class: 'kv' }, [el('span', { text: '制作人' }), el('b', { text: MAKER })])
       ]
     }));
   }
