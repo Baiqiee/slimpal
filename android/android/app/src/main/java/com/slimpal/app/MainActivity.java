@@ -1,4 +1,4 @@
-package com.jianfeiji.app;
+package com.slimpal.app;
 
 import com.getcapacitor.BridgeActivity;
 
