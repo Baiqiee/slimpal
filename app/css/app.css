@@ -352,19 +352,6 @@ body { display: flex; justify-content: center; }
 }
 .seg button.on { background: #fff; color: var(--pink-deep); font-weight: 700; box-shadow: var(--shadow-sm); }
 
-/* ---------- 图鉴 / 好感度 ---------- */
-.aff-heart { font-size: 13px; color: var(--pink-deep); font-weight: 700; }
-.face-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
-.face-cell {
-  border-radius: 14px; overflow: hidden; background: var(--pink-soft);
-  position: relative; aspect-ratio: 1; cursor: pointer;
-}
-.face-cell img { width: 100%; height: 100%; object-fit: cover; display: block; }
-.face-cell b {
-  position: absolute; left: 6px; bottom: 5px; font-size: 11px; font-weight: 600;
-  color: #fff; text-shadow: 0 1px 3px rgba(120,70,90,.7);
-}
-
 /* ---------- 日记 ---------- */
 .mood-row { display: flex; gap: 6px; flex-wrap: wrap; }
 .mood {
@@ -544,13 +531,18 @@ body { display: flex; justify-content: center; }
 .react-name { font-size: 11px; color: var(--pink-deep); font-weight: 700; }
 .react-text { font-size: 13.5px; line-height: 1.4; }
 
-/* ---------- 祝贺卡 ---------- */
-.celebrate { display: flex; gap: 12px; align-items: center; }
-.celebrate img {
-  width: 96px; height: 96px; border-radius: 50%; object-fit: cover; flex: 0 0 auto;
-  border: 3px solid #fff; box-shadow: 0 6px 18px rgba(200,120,150,.32);
+/* ---------- 庆祝浮层：小克整屏居中淡入 ----------
+   里程碑、达成目标、生日都用它，和引导页开场是同一个观感。 */
+.celebrate-layer {
+  position: absolute; inset: 0; z-index: 70;
+  background: linear-gradient(180deg, rgba(255, 247, 248, .97) 0%, rgba(252, 231, 236, .99) 100%);
+  display: flex; flex-direction: column; justify-content: center;
+  padding: 18px calc(18px + env(safe-area-inset-left)) calc(18px + env(safe-area-inset-bottom));
+  animation: introFadeIn .7s cubic-bezier(.2,.8,.3,1) both;
 }
-.celebrate-text { font-size: 14.5px; line-height: 1.5; font-weight: 600; color: var(--pink-deep); }
+.celebrate-note {
+  text-align: center; font-size: 13px; color: var(--ink-3); margin: -6px 0 14px;
+}
 
 /* ---------- 引导 ---------- */
 .onboard-face {

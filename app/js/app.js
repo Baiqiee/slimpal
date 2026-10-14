@@ -182,16 +182,13 @@
         });
         if (!done) {
           var text = JF.chloe.pick('birthday', { name: p.name }, true);
-          ui.sheet({
-            title: '今天是你的生日 🎂',
-            children: [el('div', { class: 'celebrate' }, [
-              el('img', { src: JF.chloe.facePath('laugh'), alt: '' }),
-              el('div', { class: 'celebrate-text', text: text })
-            ])],
-            actions: [el('button', {
-              class: 'btn primary block', type: 'button',
-              onclick: function () { ui.closeSheet(); S.markBirthdayWished(new Date().getFullYear()); }
-            }, ['谢谢你，小克'])]
+          // 和里程碑用同一套「小克居中淡入」的庆祝样式
+          JF.actions.celebrate({
+            text: text,
+            pose: 'alt',
+            note: '生日快乐，' + p.name,
+            button: '谢谢你，小克',
+            onClose: function () { S.markBirthdayWished(new Date().getFullYear()); }
           });
           return;
         }

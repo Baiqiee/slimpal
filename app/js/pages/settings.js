@@ -7,11 +7,6 @@
   var ui = JF.ui;
   var el = U.el;
 
-  var FACE_LABELS = {
-    calm: '平静', happy: '开心', laugh: '大笑', cheer: '加油',
-    shy: '害羞', serious: '认真', tired: '疲惫', angry: '生气', bashful: '腼腆'
-  };
-
   /** 关于页里的制作人署名 */
   var MAKER = '白切';
 
@@ -196,24 +191,8 @@
             el('div', { class: 'chara-intro', text: c.intro }),
             el('div', { class: 'chara-aff', text: '好感度 ' + aff.points + ' · ' + aff.name })
           ])
-        ]),
-        el('div', { class: 'small mt12 mb8', text: '她现在的表情（点一下可以看大图）' }),
-        el('div', { class: 'face-grid' }, Object.keys(c.assets.faces).map(function (k) {
-          return el('div', {
-            class: 'face-cell', title: FACE_LABELS[k] || k,
-            onclick: function () {
-              ui.sheet({
-                title: FACE_LABELS[k] || k,
-                children: [el('img', { src: JF.chloe.facePath(k), style: 'width:100%;border-radius:16px;display:block' })]
-              });
-            }
-          }, [
-            el('img', { src: JF.chloe.facePath(k), alt: '' }),
-            el('b', { text: FACE_LABELS[k] || k })
-          ]);
-        })),
-        el('div', { class: 'small mt12', text: '已经解锁 ' + S.state().milestones.length + '/10 个减重里程碑' })
-      ].filter(Boolean)
+        ])
+      ]
     }));
 
     // 我的资料

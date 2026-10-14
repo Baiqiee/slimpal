@@ -198,10 +198,11 @@ app.whenReady().then(async () => {
   await wait(450);
   const w = JSON.parse(await js(`JSON.stringify(JF.store.latestWeight() || {})`));
   check('体重已记录', w.kg === 80.5, JSON.stringify(w));
-  check('降到 1/10 里程碑会祝贺', await js(`!!document.querySelector('.mask .celebrate')`));
+  check('降到 1/10 里程碑会祝贺', await js(`!!document.querySelector('.celebrate-layer .scene-portrait')`));
   const ms = await js(`JF.store.state().milestones.length`);
   check('里程碑已标记', ms === 1, 'milestones=' + ms);
-  await js(`JF.ui.closeSheet(); 1`);
+  // 庆祝浮层不是 .mask 弹层，得单独收起来
+  await js(`(function(){ var l = document.querySelector('.celebrate-layer'); if (l) l.parentNode.removeChild(l); JF.ui.closeSheet(); return 1; })()`);
   await wait(220);
 
   // ---------- 6. 食物库增删改 ----------
@@ -277,10 +278,12 @@ app.whenReady().then(async () => {
   // ---------- 9. 设置页 ----------
   await js(`JF.app.openSettings(); 1`);
   await wait(350);
-  check('设置页打开', await js(`!!document.querySelector('.onboard .face-grid')`));
-  check('表情图鉴 9 张', await js(`document.querySelectorAll('.onboard .face-cell').length === 9`));
-  check('表情图鉴图片可加载', await js(`(function(){
-    var im = document.querySelector('.onboard .face-cell img');
+  check('设置页打开', await js(`!!document.querySelector('.onboard .chara-name')`));
+  // 表情图鉴和里程碑进度是内部信息，已按需求从设置里移除
+  check('设置里不再有表情图鉴', await js(`document.querySelectorAll('.onboard .face-grid, .onboard .face-cell').length === 0`));
+  check('设置里不再有里程碑进度', await js(`document.querySelector('.onboard').textContent.indexOf('已经解锁') === -1`));
+  check('角色头像可加载', await js(`(function(){
+    var im = document.querySelector('.onboard .chara-face');
     return !!im && im.complete && im.naturalWidth > 0; })()`));
   await js(`(function(){var b=document.querySelector('.onboard .icon-btn'); if(b) b.click(); return 1;})()`);
   await wait(250);

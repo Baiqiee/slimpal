@@ -153,6 +153,20 @@ app.whenReady().then(async () => {
   await wait(550);
   await capture(win, '06-settings', '设置');
 
+  // 庆祝浮层（里程碑 / 生日 / 达成目标共用）
+  await win.webContents.executeJavaScript(`
+    (function(){
+      var b = document.querySelector('.onboard .icon-btn');
+      if (b) b.click();
+      JF.store.state().milestones = [];
+      JF.store.addWeight(76.5);
+      JF.actions.checkMilestone();
+      return 1;
+    })()
+  `);
+  await wait(700);
+  await shot(win, '07-celebrate', '里程碑庆祝');
+
   console.log('done');
   app.quit();
 });

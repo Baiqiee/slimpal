@@ -513,6 +513,80 @@ test('#12 设置里的「虚拟姬」卡片：标题、间距、去掉升级提�
   return '标题「' + v.title + '」；行间距 ' + v.gapNameIntro + 'px / ' + v.gapIntroAff + 'px';
 });
 
+test('#13 设置里不再暴露表情图鉴和里程碑进度', async () => {
+  await resetToOnboarding();
+  await seedAndEnter();
+  await js(`JF.app.openSettings(); 1`);
+  await wait(500);
+  const v = JSON.parse(await js(`(function(){
+    var box = document.querySelector('.onboard');
+    return JSON.stringify({
+      text: box.textContent,
+      faceGrid: box.querySelectorAll('.face-grid, .face-cell').length,
+      faceImgs: box.querySelectorAll('img[src*="face-"]').length,
+      hasCharCard: !!box.querySelector('.chara-name'),
+      affText: (box.querySelector('.chara-aff') || {}).textContent || ''
+    });
+  })()`));
+  assert(v.text.indexOf('她现在的表情') === -1, '「她现在的表情」还在设置里');
+  assert(v.text.indexOf('已经解锁') === -1, '「已经解锁 N/10 个减重里程碑」还在设置里');
+  assert(v.text.indexOf('个减重里程碑') === -1, '里程碑计数还在设置里');
+  assertEqual(v.faceGrid, 0, '表情图鉴（.face-grid）还在');
+  assertEqual(v.faceImgs, 0, '表情卡片的图片还在 DOM 里');
+  assert(v.hasCharCard, '把角色卡片一起删掉了，删多了');
+  assert(/好感度/.test(v.affText), '好感度那一行被误删了');
+  await js(`(function(){var b=document.querySelector('.onboard .icon-btn'); if(b) b.click(); return 1;})()`);
+  await wait(250);
+  return '设置里已无表情图鉴与里程碑计数；好感度仍显示「' + v.affText + '」';
+});
+
+test('#13 达成里程碑时小克居中淡入庆祝', async () => {
+  await resetToOnboarding();
+  await seedAndEnter();
+  // 减到 1/10 的位置（起点 82kg，目标 72kg，减 1kg 即达成第 1 格）
+  await js(`(function(){
+    JF.store.addWeight(81);
+    return JF.actions.checkMilestone();
+  })()`);
+  await wait(400);
+  const v = JSON.parse(await js(`(function(){
+    var layer = document.querySelector('.celebrate-layer');
+    if (!layer) return JSON.stringify({err:'没有弹出庆祝浮层'});
+    var scene = layer.querySelector('.scene');
+    var img = layer.querySelector('.scene-portrait');
+    if (!scene || !img) return JSON.stringify({err:'庆祝浮层里没有「立绘 + 气泡」'});
+    var lr = layer.getBoundingClientRect(), sr = scene.getBoundingClientRect();
+    return JSON.stringify({
+      isIntroStyle: scene.classList.contains('scene-intro'),
+      anim: getComputedStyle(scene).animationName,
+      animLayer: getComputedStyle(layer).animationName,
+      offsetPx: Math.round((sr.left + sr.width / 2) - (lr.left + lr.width / 2)),
+      covers: Math.round(lr.width) + 'x' + Math.round(lr.height),
+      text: (layer.querySelector('.scene-text') || {}).textContent || '',
+      note: (layer.querySelector('.celebrate-note') || {}).textContent || '',
+      marked: JF.store.state().milestones.slice(),
+      oldSheet: document.querySelectorAll('.mask .celebrate').length,
+      btn: (layer.querySelector('.btn') || {}).textContent || ''
+    });
+  })()`));
+  assert(!v.err, v.err);
+  assert(v.isIntroStyle && /introFadeIn/.test(v.anim),
+    '庆祝不是「居中淡入」的样式（animationName=' + v.anim + '）');
+  assert(/introFadeIn/.test(v.animLayer), '浮层本身没有淡入');
+  assert(Math.abs(v.offsetPx) <= 6, '庆祝时小克没有水平居中，偏移 ' + v.offsetPx + 'px');
+  assert(/^\d+x\d+$/.test(v.covers), '量不到浮层尺寸');
+  assert(v.text.length > 0, '庆祝没有台词');
+  assert(/已经减重/.test(v.note), '没有显示减重多少斤：' + v.note);
+  assertEqual(v.marked.join(','), '1', '里程碑没有被记下：' + v.marked.join(','));
+  assertEqual(v.oldSheet, 0, '还在用旧的弹层式祝贺卡');
+
+  // 点按钮收起
+  await js(`document.querySelector('.celebrate-layer .btn').click(); 1`);
+  await wait(300);
+  assertEqual(await js(`document.querySelectorAll('.celebrate-layer').length`), 0, '点按钮后庆祝浮层没关掉');
+  return '居中偏移 ' + v.offsetPx + 'px；文案「' + v.text.slice(0, 18) + '…」/「' + v.note + '」';
+});
+
 // ---------------------------------------------------------------- 运行环境
 
 let win = null;

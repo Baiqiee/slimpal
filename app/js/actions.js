@@ -144,6 +144,34 @@
   }
 
   /** 达成 1/10 里程碑时，弹一张专门的祝贺卡 */
+  /**
+   * 庆祝一下：小克整屏居中淡入，说完再点按钮收起。
+   * 里程碑、达成目标、生日都用它，保证"重要时刻"是同一个观感。
+   */
+  function celebrate(opts) {
+    opts = opts || {};
+    var layer = el('div', { class: 'celebrate-layer' });
+    var scene = JF.chloe.renderScene({
+      text: opts.text,
+      pose: opts.pose || 'alt',
+      size: 'lg',
+      className: 'scene-intro celebrate-scene'
+    });
+    layer.appendChild(scene);
+    if (opts.note) layer.appendChild(el('div', { class: 'celebrate-note', text: opts.note }));
+    layer.appendChild(el('div', { class: 'sheet-actions' }, [
+      el('button', {
+        class: 'btn primary', type: 'button', style: 'flex:2',
+        onclick: function () {
+          if (layer.parentNode) layer.parentNode.removeChild(layer);
+          if (opts.onClose) opts.onClose();
+        }
+      }, [opts.button || '继续加油'])
+    ]));
+    document.getElementById('app').appendChild(layer);
+    return layer;
+  }
+
   function checkMilestone() {
     var p = S.profile();
     if (!p) return false;
@@ -153,24 +181,18 @@
 
     var total = p.startWeightKg - p.targetWeightKg;
     var done = cur <= p.targetWeightKg;
-    var jin = done ? U.round1(U.kgToJin(total)) : JF.calc.milestoneJin(p.startKg || p.startWeightKg, p.targetWeightKg, step);
+    var jin = done ? U.round1(U.kgToJin(total)) : JF.calc.milestoneJin(p.startWeightKg, p.targetWeightKg, step);
 
     var text = done
       ? JF.chloe.pick('goalReached', { name: p.name, jin: jin }, true)
       : JF.chloe.pick('milestone', { name: p.name, jin: jin, toTarget: U.round1(U.kgToJin(cur - p.targetWeightKg)) }, true);
 
     S.markMilestone(step);
-
-    ui.sheet({
-      title: done ? '目标达成！' : ('第 ' + step + '/10 个里程碑'),
-      children: [
-        el('div', { class: 'celebrate' }, [
-          el('img', { src: JF.chloe.facePath('laugh'), alt: '' }),
-          el('div', { class: 'celebrate-text', text: text })
-        ]),
-        el('div', { class: 'small center mt8', text: '已经减重 ' + jin + ' 斤' })
-      ],
-      actions: [el('button', { class: 'btn primary block', type: 'button', onclick: ui.closeSheet }, ['继续加油'])]
+    celebrate({
+      text: text,
+      pose: 'alt',
+      note: '已经减重 ' + jin + ' 斤',
+      button: done ? '太好了！' : '继续加油'
     });
     return true;
   }
@@ -232,6 +254,7 @@
 
   JF.actions = {
     react: react,
+    celebrate: celebrate,
     addMealSheet: addMealSheet,
     weighSheet: weighSheet,
     foodEditSheet: foodEditSheet,
