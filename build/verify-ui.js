@@ -99,7 +99,7 @@ test('#3 引导页第一屏改成「立绘 + 贴着她弹出的气泡」', async
   })()`);
   const v = JSON.parse(m);
   assert(!v.err, v.err);
-  assert(/portrait\.png$/.test(v.src), '第一屏用的不是全身立绘，而是 ' + v.src);
+  assert(/portrait(-alt|-back)?\.png$/.test(v.src), '第一屏用的不是小克立绘，而是 ' + v.src);
   assert(v.opacity === '1', '立绘被冲淡了，opacity=' + v.opacity);
   assert(v.bubbleBottom <= v.imgTop + 10,
     '气泡没贴在立绘上方（气泡底 ' + v.bubbleBottom + 'px，立绘顶 ' + v.imgTop + 'px）');
@@ -143,55 +143,43 @@ test('#3 台词与立绘姿势一一对应，且真的会换姿势', async () =>
 test('#4 引导页全程用立绘，不出现 Q 版', async () => {
   await resetToOnboarding();
   const seen = [];
-  // 走完 8 步，每一步都查一遍
-  for (let i = 0; i < 8; i++) {
+  for (let step = 1; step <= 8; step++) {
     const m = JSON.parse(await js(`(function(){
       var imgs = Array.prototype.slice.call(document.querySelectorAll('.onboard img'));
       return JSON.stringify({
-        srcs: imgs.map(function(x){ return x.getAttribute('src'); }),
         chibi: imgs.filter(function(x){ return /chibi\\.png/.test(x.getAttribute('src') || ''); }).length,
         portrait: imgs.filter(function(x){ return /portrait.*\\.png/.test(x.getAttribute('src') || ''); }).length,
         scenes: document.querySelectorAll('.onboard .scene').length,
-        step: (document.querySelector('.onboard-step') || {}).textContent || ''
+        no: (function(){ var m=/第\\s*(\\d+)\\s*\\/\\s*8\\s*步/.exec((document.querySelector('.onboard-step')||{}).textContent||''); return m?Number(m[1]):0; })()
       });
     })()`));
     seen.push(m);
-    // 下一步
-    const ok = await js(`(function(){
-      var bs = Array.prototype.slice.call(document.querySelectorAll('.onboard .btn'));
-      var b = bs.filter(function(x){ return /开始|下一步|就叫这个|记住了|就这样|开始吧/.test(x.textContent); })[0];
-      if (!b) return false;
-      b.click(); return true;
-    })()`);
-    if (!ok) break;
-    await wait(220);
-    // 有输入框的步骤需要先填值才能继续
-    await js(`(function(){
-      var ins = document.querySelectorAll('.onboard .input');
-      for (var i = 0; i < ins.length; i++) {
-        if (!ins[i].value) {
-          ins[i].value = ins[i].type === 'date' ? '1995-06-18'
-                       : ins[i].type === 'number' ? (i === 0 ? '176' : '82')
-                       : '测试君';
-          ins[i].dispatchEvent(new Event('input', {bubbles:true}));
-        }
-      }
-      var choices = document.querySelectorAll('.onboard .choice');
-      if (choices.length && !document.querySelector('.onboard .choice.on')) choices[0].click();
-      return 1;
-    })()`);
-    await wait(120);
+    if (step < 8) await fillOnboardFields(), await clickOnboardNext();
   }
+  const nos = seen.map(s => s.no);
+  assertEqual(nos.join(','), '1,2,3,4,5,6,7,8', '没有真的走完 8 步，实际经过：' + nos.join(','));
+  assertEqual(seen.filter(s => s.chibi > 0).length, 0, '有步骤还在用 Q 版立绘');
+  assertEqual(seen.filter(s => s.portrait === 0).length, 0, '有步骤没有显示立绘');
+  assertEqual(seen.filter(s => s.scenes === 0).length, 0, '有步骤没有用「立绘+气泡」组件');
+  return '1→8 步全程 portrait 立绘，无 chibi';
+});
 
-  const withChibi = seen.filter(s => s.chibi > 0);
-  assertEqual(withChibi.length, 0,
-    '有 ' + withChibi.length + ' 步还在用 Q 版立绘：' + JSON.stringify(withChibi.map(s => s.step.trim())));
-  const badPortrait = seen.filter(s => s.portrait === 0);
-  assertEqual(badPortrait.length, 0,
-    '有步骤没有显示立绘：' + JSON.stringify(badPortrait.map(s => s.step.trim())));
-  const noScene = seen.filter(s => s.scenes === 0);
-  assertEqual(noScene.length, 0, '有步骤没有用「立绘+气泡」组件');
-  return '走完 ' + seen.length + ' 步，全程 portrait 立绘、无 chibi';
+test('#4b 走引导的测试工具本身是可靠的', async () => {
+  await resetToOnboarding();
+  const r = await walkOnboarding(8);
+  assert(r.ok, '走不到第 8 步：' + (r.why || '') + '，经过 ' + r.steps.join('→'));
+  assertEqual(r.steps.join(','), '1,2,3,4,5,6,7,8', '步号不连续：' + r.steps.join(','));
+  return '步号连续 ' + r.steps.join('→');
+});
+
+test('#5 第 8 步的收尾文案已替换', async () => {
+  await resetToOnboarding();
+  const r = await walkOnboarding(8);
+  assert(r.ok, '走不到第 8 步：' + (r.why || ''));
+  const text = await js(`document.querySelector('.onboard').textContent`);
+  assert(text.indexOf('正式开始你的减肥计划吧，不要半途而弃哦~') !== -1, '新的收尾文案没有出现');
+  assert(text.indexOf('每减掉目标的十分之一') === -1, '旧的里程碑说明文案还在');
+  return '第 8 步文案已更新';
 });
 
 // ---------------------------------------------------------------- 运行环境
@@ -201,9 +189,13 @@ const errors = [];
 /** 在页面里执行表达式并取回结果 */
 function js(code) { return win.webContents.executeJavaScript(code); }
 
-/** 清空数据回到引导页 */
+/** 清空数据回到引导页（localStorage 和桌面数据文件都要清，否则会读回旧资料直接进主界面） */
 async function resetToOnboarding() {
-  await js(`localStorage.clear(); 1`);
+  await js(`(function(){
+    try { window.jianfeijiNative.save(''); } catch (e) {}
+    localStorage.clear();
+    return 1;
+  })()`);
   await win.webContents.reload();
   await wait(900);
 }
@@ -222,6 +214,76 @@ async function seedAndEnter() {
     })()
   `);
   await wait(700);
+}
+
+/** 当前引导到第几步（读"第 N / 8 步"） */
+async function onboardStepNo() {
+  return js(`(function(){
+    var m = /第\\s*(\\d+)\\s*\\/\\s*8\\s*步/.exec((document.querySelector('.onboard-step')||{}).textContent || '');
+    return m ? Number(m[1]) : 0;
+  })()`);
+}
+
+/**
+ * 按字段标题填值 —— 不能用"第几个输入框"来猜，
+ * 因为每一步的输入框个数和含义都不一样（目标那步只有一个框，值是公斤数）。
+ */
+async function fillOnboardFields() {
+  await js(`(function(){
+    var fields = document.querySelectorAll('.onboard .field');
+    for (var i = 0; i < fields.length; i++) {
+      var lab = (fields[i].querySelector('.field-label') || {}).textContent || '';
+      var inp = fields[i].querySelector('.input');
+      if (!inp || inp.value) continue;
+      if (inp.type === 'date')            inp.value = '1995-06-18';
+      else if (/身高/.test(lab))          inp.value = '176';
+      else if (/现在体重/.test(lab))       inp.value = '82';
+      else if (/目标体重/.test(lab))       inp.value = '72';
+      else if (/称呼|名字/.test(lab))      inp.value = '测试君';
+      else if (inp.type === 'text')       inp.value = '测试君';
+      else                                inp.value = '1';
+      inp.dispatchEvent(new Event('input', { bubbles: true }));
+      inp.dispatchEvent(new Event('change', { bubbles: true }));
+    }
+    var choices = document.querySelectorAll('.onboard .choice');
+    if (choices.length && !document.querySelector('.onboard .choice.on')) choices[0].click();
+    return 1;
+  })()`);
+}
+
+/** 点当前步的继续按钮；返回点了哪个按钮的文字（没得点返回 null） */
+async function clickOnboardNext() {
+  const label = await js(`(function(){
+    var bs = [].slice.call(document.querySelectorAll('.onboard .btn'));
+    var b = bs.filter(function(x){ return /开始|下一步|就叫这个|记住了|就这样|开始吧/.test(x.textContent); })[0];
+    if (!b) return null;
+    var t = b.textContent;
+    b.click();
+    return t;
+  })()`);
+  await wait(260);
+  return label;
+}
+
+/**
+ * 一路走到指定步（默认第 8 步）。
+ * 返回 { ok, reached, steps }；steps 记录每一步的号数，用来证明真的在前进、
+ * 而不是卡在某一步空转。
+ */
+async function walkOnboarding(target) {
+  target = target || 8;
+  const steps = [await onboardStepNo()];
+  for (let guard = 0; guard < 20; guard++) {
+    const now = steps[steps.length - 1];
+    if (now >= target) return { ok: true, reached: now, steps: steps };
+    await fillOnboardFields();
+    const label = await clickOnboardNext();
+    if (label === null) return { ok: false, reached: now, steps: steps, why: '当前步找不到继续按钮' };
+    const after = await onboardStepNo();
+    if (after === now) return { ok: false, reached: now, steps: steps, why: '点了「' + label + '」但没前进（可能校验没过）' };
+    steps.push(after);
+  }
+  return { ok: false, reached: steps[steps.length - 1], steps: steps, why: '超过最大步数' };
 }
 
 app.whenReady().then(async () => {

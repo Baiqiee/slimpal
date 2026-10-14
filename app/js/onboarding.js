@@ -216,7 +216,7 @@
         el('div', { class: 'kv' }, [el('span', { text: '目标' }), el('b', { text: U.fmtJin(p.targetWeightKg) + ' 斤' })]),
         el('div', { class: 'kv' }, [el('span', { text: '每日热量上限' }), el('b', { text: p.dailyLimit + ' 千卡' })])
       ]));
-      host.appendChild(el('div', { class: 'small center mt8', text: '每减掉目标的十分之一，我都会来恭喜你一次。' }));
+      host.appendChild(el('div', { class: 'small center mt8', text: '正式开始你的减肥计划吧，不要半途而弃哦~' }));
       navButtons(host, {
         label: '开始吧',
         onNext: function () {
