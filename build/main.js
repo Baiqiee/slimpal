@@ -7,10 +7,48 @@
  *  4. 开机自启（App 设置里可关）
  *  5. 弹系统通知
  */
-const { app, BrowserWindow, Tray, Menu, Notification, nativeImage, shell, protocol } = require('electron');
 const path = require('node:path');
 const fs = require('node:fs');
-const core = require('./desktop-core');
+
+/**
+ * 最早期日志：只用 Node 的 fs 写文件，**不碰任何 Electron API**。
+ * 万一 Electron 自己起不来（例如 require('electron') 就抛了），
+ * 普通 diag() 会因为拿不到 userData 路径而什么都写不出来，
+ * 结果就是"程序一闪而过、一点线索都没有"。这一段就是为了那种情况留的。
+ * 路径与 Electron 的 userData 保持一致：%APPDATA%\减肥姬\
+ */
+const APP_NAME_DIR = '减肥姬';
+function earlyLog(msg) {
+  try {
+    const dir = path.join(process.env.APPDATA || process.env.HOME || '.', APP_NAME_DIR);
+    fs.mkdirSync(dir, { recursive: true });
+    fs.appendFileSync(path.join(dir, 'startup.log'),
+      new Date().toISOString() + '  [early] ' + msg + '\r\n');
+  } catch (e) { /* 记不上就算了 */ }
+}
+
+earlyLog('--- main.js 开始执行 --- node=' + process.versions.node);
+
+let electron = null;
+let core = null;
+try {
+  electron = require('electron');
+} catch (e) {
+  earlyLog('require("electron") 失败: ' + (e && e.stack));
+  throw e;
+}
+try {
+  core = require('./desktop-core');
+} catch (e) {
+  earlyLog('require("./desktop-core") 失败: ' + (e && e.stack));
+  throw e;
+}
+
+const { app, BrowserWindow, Tray, Menu, Notification, nativeImage, shell, protocol } = electron;
+
+earlyLog('Electron 模块就绪; isPackaged=' + app.isPackaged
+  + ' resourcesPath=' + process.resourcesPath
+  + ' APP_ROOT=' + core.APP_ROOT);
 
 const ICON = path.join(core.APP_ROOT, 'assets', 'icon.png');
 const TRAY_ICON = path.join(core.APP_ROOT, 'assets', 'tray.png');
@@ -21,16 +59,7 @@ let quitting = false;
 
 /** 启动日志：出问题时能知道卡在哪一步（放在用户数据目录里） */
 function diag(msg) {
-  try {
-    const dir = app.getPath('userData');
-    fs.mkdirSync(dir, { recursive: true });
-    const file = path.join(dir, 'startup.log');
-    // 只留最近的记录，别让它无限长
-    try {
-      if (fs.statSync(file).size > 128 * 1024) fs.writeFileSync(file, '');
-    } catch (e) { /* 文件不存在就算了 */ }
-    fs.appendFileSync(file, new Date().toISOString() + '  ' + msg + '\r\n');
-  } catch (e) { /* 记不上就算了，不能因为日志让程序起不来 */ }
+  earlyLog(msg);
 }
 
 diag('--- 启动 --- electron=' + process.versions.electron + ' packaged=' + app.isPackaged);

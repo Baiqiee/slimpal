@@ -17,8 +17,8 @@ v1.0 已完成并验证，产物在 `dist/`：
 
 | 产物 | 说明 |
 |---|---|
-| `减肥姬-1.0.0-安装程序.exe` | Windows 安装包（NSIS，约 110 MB） |
-| `减肥姬-1.0-android.apk` | 安卓安装包（自签名，约 8.5 MB） |
+| `减肥姬-1.1.0-安装程序.exe` | Windows 安装包（NSIS，约 110 MB） |
+| `减肥姬-1.1-android.apk` | 安卓安装包（自签名，约 8.5 MB） |
 | `win-unpacked/JianfeiJi.exe` | Windows 免安装版 |
 
 iPhone 版按需求方决定暂不做（原因见 PRD 第 9 节）。
@@ -41,7 +41,8 @@ jianfeiji/
 ├─ build/                   ← Windows 壳（Electron）
 │  ├─ main.js  preload.js  desktop-core.js
 │  ├─ shot.js                    ← 开发用：逐页截图
-│  ├─ verify-app.js              ← 功能端到端自检（69 项）
+│  ├─ verify-ui.js               ← 界面回归自检（17 项：结构 / 文字 / 位置 / 动画）
+│  ├─ verify-app.js              ← 功能端到端自检（71 项）
 │  └─ verify-desktop.js          ← 数据链路自检（13 项）
 ├─ android/                 ← 安卓壳（Capacitor）
 │  ├─ capacitor.config.json
@@ -79,11 +80,15 @@ npx electron .
 
 ```powershell
 cd build
-npx electron verify-app.js        # 66~69 项功能断言，走真实界面流程
+npx electron verify-ui.js         # 17 项界面断言：结构 / 文字 / 位置 / 动画是否播了
+npx electron verify-app.js        # 71 项功能断言，走真实界面流程
 npx electron verify-desktop.js    # 13 项数据链路断言，含"重开后读回"
 ```
 
-两个脚本都要求输出 **0 项 FAIL**。
+三个脚本都要求输出 **0 项 FAIL**（共 101 项）。
+
+> `verify-ui.js` **故意不关闭 CSS 动画**，因为它要验证转场动画确实播放。
+> 所以量位置之前都会先等动画结束，改这个文件时注意别把等待去掉。
 
 ### 逐页截图（肉眼检查界面）
 
@@ -147,11 +152,33 @@ python tools/make_android_res.py           # 生成安卓图标与启动图
 
 | 位置 | 为什么 |
 |---|---|
-| `build/package.json` 里的 `disableAsarIntegrity: true` | 去掉它，打包出的 exe 会在执行我们代码之前就静默崩溃（启动日志一条都不留） |
 | `app/css` 用经典 `<script>`，不用 ES module | 否则 `file://` 直接打开会加载失败 |
 | 安卓 `styles.xml` 必须是 `Theme.AppCompat.Light` + `forceDarkAllowed=false` | 否则系统深色模式会把整个配色搞花 |
 | 安卓 `AndroidManifest.xml` 里的 `screenOrientation="portrait"` | 横屏布局没设计过 |
 | 前端不引任何第三方 JS 库，图表手写 SVG | 保证完全离线、无供应链风险 |
+
+### 排查"打包后双击没反应"的正确姿势
+
+**如果你在 DSH 会话里测试打包后的程序**，先确认这个环境变量没被带进去：
+
+```powershell
+Remove-Item Env:ELECTRON_RUN_AS_NODE -ErrorAction SilentlyContinue
+```
+
+`ELECTRON_RUN_AS_NODE=1` 会让任何 Electron 二进制（包括打包好的 App）**退化成普通 Node**。
+没有脚本参数时它就无声无息地 `exit 0`，`main.js` 一行都不会执行，
+表现就是"双击没反应、启动日志一个字都没有"。
+
+> 这个坑踩过一次：当时误判成 electron-builder 的 asar 完整性资源有问题，
+> 还特意加了 `disableAsarIntegrity: true` 去关它。后来逐项对照才发现
+> 关不关都一样能跑，真正的区别只是我有的命令清了那个变量、有的没清。
+> 现在 asar 完整性保持开启（默认行为），不再为这个误判关掉安全特性。
+
+**用户自己双击桌面图标时不会有这个变量**，所以这只影响开发时的排查。
+
+主进程现在有一段**不依赖 Electron 的早期日志**（`main.js` 顶部的 `earlyLog`），
+写进 `%APPDATA%\减肥姬\startup.log`。哪怕 Electron 自己起不来也会留下痕迹，
+先看这个文件。
 
 更多约束见 [PRD.md](PRD.md) 第 8.2 节。
 

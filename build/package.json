@@ -1,7 +1,7 @@
 {
   "name": "jianfeiji",
   "productName": "减肥姬",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "本地减肥陪伴 App —— 不联网、不登录，数据只存在你自己的设备上",
   "main": "main.js",
   "private": true,
@@ -13,7 +13,6 @@
   "build": {
     "appId": "com.jianfeiji.desktop",
     "productName": "减肥姬",
-    "disableAsarIntegrity": true,
     "directories": {
       "output": "../dist",
       "buildResources": "."
