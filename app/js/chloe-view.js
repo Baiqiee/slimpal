@@ -90,7 +90,7 @@
    */
   function currentScene() {
     var p = S.profile();
-    if (!p) return { scene: 'firstMeet', expr: 'cheer' };
+    if (!p) return { scene: 'intro', expr: 'cheer' };
 
     var ctx = context();
     var today = U.todayKey();

@@ -6,8 +6,16 @@
   var S = JF.store;
   var el = U.el;
 
-  var STEPS = ['welcome', 'name', 'birthday', 'gender', 'body', 'activity', 'goal', 'done'];
+  // 引导分两个阶段：
+  //   intro —— 小克居中淡入，一句一句介绍自己（每句换姿势）
+  //   form  —— 介绍完，注册表单从下方顶上来，把她推上去，之后就是原来的问答流程
+  var STEPS = ['name', 'birthday', 'gender', 'body', 'activity', 'goal', 'done'];
+  var TOTAL = STEPS.length + 1;          // 加上开场介绍那一步
+  var phase = 'intro';
+  var introIdx = 0;
   var idx = 0;
+  var root = null;
+  var formAnimPending = false;   // 只在"介绍→问答"那一次转场播动画
   var draft = {
     name: '', birthday: '', gender: 'female',
     heightCm: '', weightKg: '', activity: 'light',
@@ -16,6 +24,18 @@
 
   // 有表单的步骤，立绘缩一档，给输入框留地方
   var FORM_STEPS = { name: 1, birthday: 1, gender: 1, body: 1, activity: 1, goal: 1 };
+
+  function introLines() {
+    var c = JF.chloe.active();
+    return (c.lines && c.lines.intro) || ['你好呀，我是小克。'];
+  }
+  function introPoses() {
+    var c = JF.chloe.active();
+    return (c.poses && c.poses.intro) || ['portrait'];
+  }
+
+  /** 当前显示的是第几步（开场介绍算第 1 步） */
+  function stepNo() { return phase === 'intro' ? 1 : idx + 2; }
 
   /** 小克说一句：立绘 + 贴着她弹出的气泡（全 App 统一的说话方式） */
   function say(host, scene, extra) {
@@ -27,13 +47,59 @@
     }));
   }
 
-  function next(host) { idx++; renderInto(host); }
-  function back(host) { if (idx > 0) { idx--; renderInto(host); } }
+  function paint() {
+    U.clear(root);
+    // 只有从"介绍"切到"问答"的那一次才播"表单顶上来"的动画，之后翻页不再播
+    root.classList.toggle('anim-form', formAnimPending);
+    formAnimPending = false;
+    if (phase === 'intro') renderIntro(root);
+    else renderInto(root);
+  }
+  function next() { idx++; paint(); }
+  function back() { if (idx > 0) { idx--; paint(); } }
+
+  // ---------- 阶段一：居中淡入的开场介绍 ----------
+  function renderIntro(host) {
+    var lines = introLines();
+    var poses = introPoses();
+    var last = introIdx >= lines.length - 1;
+
+    var scene = JF.chloe.renderScene({
+      text: JF.chloe.fill(lines[introIdx], { name: draft.name || '你' }),
+      pose: poses[introIdx % poses.length],
+      className: 'scene-intro scene-lg'
+    });
+    // 点她本人也能继续
+    scene.classList.add('tappable');
+    scene.addEventListener('click', advanceIntro);
+    host.appendChild(scene);
+
+    host.appendChild(el('div', { class: 'sheet-actions' }, [
+      el('button', {
+        class: 'btn primary', type: 'button', style: 'flex:2',
+        onclick: advanceIntro
+      }, [last ? '开始吧' : '继续'])
+    ]));
+
+    host.appendChild(el('div', { class: 'onboard-step', text: '第 1 / ' + TOTAL + ' 步' }));
+  }
+
+  function advanceIntro() {
+    if (introIdx < introLines().length - 1) {
+      introIdx++;
+      paint();
+    } else {
+      phase = 'form';
+      idx = 0;
+      formAnimPending = true;   // 让表单播一次"从下方顶上来"
+      paint();
+    }
+  }
 
   function navButtons(host, opts) {
     opts = opts || {};
     host.appendChild(el('div', { class: 'sheet-actions' }, [
-      idx > 1 ? el('button', { class: 'btn ghost', type: 'button', onclick: function () { back(host); } }, ['上一步']) : null,
+      idx > 0 ? el('button', { class: 'btn ghost', type: 'button', onclick: back }, ['上一步']) : null,
       el('button', {
         class: 'btn primary', type: 'button', style: 'flex:2',
         disabled: !!opts.disabled,
@@ -43,16 +109,7 @@
   }
 
   function renderInto(host) {
-    U.clear(host);
     var step = STEPS[idx];
-
-    // 每一步都是「立绘 + 贴着她弹出的气泡」，不再有单独的顶部立绘或 Q 版
-    if (step === 'welcome') {
-      say(host, 'firstMeet');
-      navButtons(host, { label: '开始', onNext: function () { next(host); } });
-      host.appendChild(el('div', { class: 'onboard-step', text: '第 1 / ' + STEPS.length + ' 步' }));
-      return;
-    }
 
     if (step === 'name') {
       say(host, 'askName');
@@ -63,7 +120,7 @@
         onNext: function () {
           var v = nameI.value.trim();
           if (!v) { U.toast('写个名字吧'); nameI.focus(); return; }
-          draft.name = v; next(host);
+          draft.name = v; next();
         }
       });
       setTimeout(function () { nameI.focus(); }, 150);
@@ -76,7 +133,7 @@
         label: '记住了',
         onNext: function () {
           if (!bI.value) { U.toast('选个日期吧'); return; }
-          draft.birthday = bI.value; next(host);
+          draft.birthday = bI.value; next();
         }
       });
 
@@ -95,7 +152,7 @@
         row.appendChild(b);
       });
       host.appendChild(JF.ui.field('性别（基础代谢公式要用）', row));
-      navButtons(host, { label: '下一步', onNext: function () { next(host); } });
+      navButtons(host, { label: '下一步', onNext: next });
 
     } else if (step === 'body') {
       say(host, 'askBody');
@@ -112,7 +169,7 @@
           var h = Number(hI.value), w = Number(wI.value);
           if (!(h > 80 && h < 250)) { U.toast('身高填个正常数字'); hI.focus(); return; }
           if (!(w > 20 && w < 300)) { U.toast('体重填个正常数字'); wI.focus(); return; }
-          draft.heightCm = h; draft.weightKg = w; next(host);
+          draft.heightCm = h; draft.weightKg = w; next();
         }
       });
 
@@ -139,7 +196,7 @@
         ]));
       });
       host.appendChild(col);
-      navButtons(host, { label: '下一步', onNext: function () { next(host); } });
+      navButtons(host, { label: '下一步', onNext: next });
 
     } else if (step === 'goal') {
       say(host, 'askGoal');
@@ -203,7 +260,7 @@
           });
           S.addWeight(Number(draft.weightKg));
           S.addAffection(10, 'onboard');
-          next(host);
+          next();
         }
       });
 
@@ -225,17 +282,20 @@
       });
     }
 
-    host.appendChild(el('div', { class: 'onboard-step', text: '第 ' + Math.min(idx + 1, STEPS.length) + ' / ' + STEPS.length + ' 步' }));
+    host.appendChild(el('div', { class: 'onboard-step', text: '第 ' + stepNo() + ' / ' + TOTAL + ' 步' }));
   }
 
   function render(host) {
+    phase = 'intro';
+    introIdx = 0;
     idx = 0;
+    formAnimPending = false;
     U.clear(host);
     // 内容包一层：靠 margin:auto 把剩余空间分给上下，实现上下居中。
     // 比在 .onboard 上写 justify-content:center 安全——内容比屏幕高时不会裁掉顶部。
-    var inner = el('div', { class: 'onboard-inner' });
-    host.appendChild(inner);
-    renderInto(inner);
+    root = el('div', { class: 'onboard-inner' });
+    host.appendChild(root);
+    paint();
   }
 
   JF.onboarding = { render: render };

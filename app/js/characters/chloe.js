@@ -39,11 +39,14 @@
      *        {kcal} 今日已吃 · {limit} 每日上限 · {streak} 连续天数
      *        {target} 目标斤数 · {toTarget} 距目标还差多少斤 · {days} 预计天数 */
     lines: {
-      // ---- 见面 / 引导 ----
-      firstMeet: [
-        '你好呀，我是小克。以后就由我陪你一起变瘦，好不好？',
-        '第一次见面，我有点紧张……不过没关系，我们从今天开始。',
-        '嗨，我是小克。别看我这样，我可是很认真的哦。'
+      // ---- 开场介绍 ----
+      // 这一段是逐句播放的：一句一个姿势，所以这里行数和 poses.intro 一一对应，
+      // 顺序不能乱改（改了要同步改 poses.intro）。
+      intro: [
+        '你好呀，我是小克。',
+        '从今天起，我会一直陪着你，一起变瘦。',
+        '你吃过的每顿饭、每次称重、写下的心情，我都会记住。',
+        '先回答我几个问题吧，很快就好。'
       ],
       askName: [
         '先告诉我，我该怎么称呼你呀？',
@@ -215,7 +218,9 @@
    *   back          回头 —— 害羞、撒娇、有点小情绪
    */
   chloe.poses = {
-    firstMeet:     ['portrait', 'alt'],
+    // 开场介绍：一句一个姿势，和 lines.intro 的顺序一一对应
+    //            平静打招呼 → 热情 → 害羞 → 认真
+    intro:         ['portrait', 'alt', 'back', 'portrait'],
     askName:       ['portrait'],
     askBirthday:   ['portrait', 'back'],
     askGender:     ['portrait'],

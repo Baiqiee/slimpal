@@ -26,7 +26,8 @@ tools/shots/
 tools/.shot-profile/
 tools/.verify-profile/
 tools/.e2e-profile/
-tools/.pkg-profile/
+tools/.ui-profile/
+tools/.*-profile/
 tools/app-log.txt
 tools/app-err.txt
 tools/chrome.log

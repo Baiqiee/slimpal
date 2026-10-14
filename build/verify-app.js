@@ -80,7 +80,24 @@ app.whenReady().then(async () => {
 
   const said = [];
   said.push(await stepText());
-  check('第1步开始', await clickNext('开始'));
+
+  // 开场介绍：逐句点「继续」看完，最后一句的按钮是「开始吧」
+  const introSeen = [said[0]];
+  for (let i = 0; i < 8; i++) {
+    if (!(await js(`!!document.querySelector('.onboard .scene-intro')`))) break;
+    const clicked = await js(`(function(){
+      var bs = Array.prototype.slice.call(document.querySelectorAll('.onboard .btn'));
+      var b = bs.filter(function(x){ return /继续|开始吧/.test(x.textContent); })[0];
+      if (!b) return null;
+      var t = b.textContent; b.click(); return t;
+    })()`);
+    await wait(300);
+    if (clicked === null) break;
+    const t = await stepText();
+    if (t && t !== introSeen[introSeen.length - 1]) introSeen.push(t);
+  }
+  check('开场介绍是多句', introSeen.length >= 2, introSeen.length + ' 句');
+  check('介绍完进入注册表单', await js(`!document.querySelector('.onboard .scene-intro') && !!document.querySelector('.onboard .field')`));
 
   check('第2步问姓名', (await stepText()).length > 0);
   check('填入姓名', await setField('.onboard .input[type="text"]', '测试君'));

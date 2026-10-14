@@ -441,6 +441,25 @@ body { display: flex; justify-content: center; }
 .onboard .scene { margin-bottom: 4px; }
 .onboard-step { font-size: 11px; color: var(--ink-3); text-align: center; margin-top: 14px; }
 
+/* 开场介绍：小克居中淡入 */
+.scene-intro { animation: introFadeIn .8s cubic-bezier(.2,.8,.3,1) both; }
+@keyframes introFadeIn {
+  from { opacity: 0; transform: translateY(16px) scale(.97); }
+  to   { opacity: 1; transform: none; }
+}
+
+/* 介绍结束 → 注册表单从下方顶上来，同时把小克往上推。
+   只在这一次转场播（由 JS 挂 .anim-form 控制），翻页不会再播。 */
+.onboard-inner.anim-form .scene { animation: scenePushedUp .46s cubic-bezier(.2,.8,.3,1) both; }
+.onboard-inner.anim-form .sheet-actions,
+.onboard-inner.anim-form .field,
+.onboard-inner.anim-form .card,
+.onboard-inner.anim-form .list,
+.onboard-inner.anim-form .chips,
+.onboard-inner.anim-form .choice { animation: formSlideUp .46s cubic-bezier(.2,.8,.3,1) both; }
+@keyframes scenePushedUp { from { transform: translateY(24px); } to { transform: none; } }
+@keyframes formSlideUp { from { transform: translateY(56px); opacity: 0; } to { transform: none; opacity: 1; } }
+
 /* ---------- 弹窗 ---------- */
 .mask {
   position: absolute; inset: 0; z-index: 80;
