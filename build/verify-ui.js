@@ -140,6 +140,60 @@ test('#3 台词与立绘姿势一一对应，且真的会换姿势', async () =>
   return v.scenes + ' 个场景，用到的姿势：' + v.kinds.join(' / ');
 });
 
+test('#4 引导页全程用立绘，不出现 Q 版', async () => {
+  await resetToOnboarding();
+  const seen = [];
+  // 走完 8 步，每一步都查一遍
+  for (let i = 0; i < 8; i++) {
+    const m = JSON.parse(await js(`(function(){
+      var imgs = Array.prototype.slice.call(document.querySelectorAll('.onboard img'));
+      return JSON.stringify({
+        srcs: imgs.map(function(x){ return x.getAttribute('src'); }),
+        chibi: imgs.filter(function(x){ return /chibi\\.png/.test(x.getAttribute('src') || ''); }).length,
+        portrait: imgs.filter(function(x){ return /portrait.*\\.png/.test(x.getAttribute('src') || ''); }).length,
+        scenes: document.querySelectorAll('.onboard .scene').length,
+        step: (document.querySelector('.onboard-step') || {}).textContent || ''
+      });
+    })()`));
+    seen.push(m);
+    // 下一步
+    const ok = await js(`(function(){
+      var bs = Array.prototype.slice.call(document.querySelectorAll('.onboard .btn'));
+      var b = bs.filter(function(x){ return /开始|下一步|就叫这个|记住了|就这样|开始吧/.test(x.textContent); })[0];
+      if (!b) return false;
+      b.click(); return true;
+    })()`);
+    if (!ok) break;
+    await wait(220);
+    // 有输入框的步骤需要先填值才能继续
+    await js(`(function(){
+      var ins = document.querySelectorAll('.onboard .input');
+      for (var i = 0; i < ins.length; i++) {
+        if (!ins[i].value) {
+          ins[i].value = ins[i].type === 'date' ? '1995-06-18'
+                       : ins[i].type === 'number' ? (i === 0 ? '176' : '82')
+                       : '测试君';
+          ins[i].dispatchEvent(new Event('input', {bubbles:true}));
+        }
+      }
+      var choices = document.querySelectorAll('.onboard .choice');
+      if (choices.length && !document.querySelector('.onboard .choice.on')) choices[0].click();
+      return 1;
+    })()`);
+    await wait(120);
+  }
+
+  const withChibi = seen.filter(s => s.chibi > 0);
+  assertEqual(withChibi.length, 0,
+    '有 ' + withChibi.length + ' 步还在用 Q 版立绘：' + JSON.stringify(withChibi.map(s => s.step.trim())));
+  const badPortrait = seen.filter(s => s.portrait === 0);
+  assertEqual(badPortrait.length, 0,
+    '有步骤没有显示立绘：' + JSON.stringify(badPortrait.map(s => s.step.trim())));
+  const noScene = seen.filter(s => s.scenes === 0);
+  assertEqual(noScene.length, 0, '有步骤没有用「立绘+气泡」组件');
+  return '走完 ' + seen.length + ' 步，全程 portrait 立绘、无 chibi';
+});
+
 // ---------------------------------------------------------------- 运行环境
 let win = null;
 const errors = [];

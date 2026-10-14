@@ -53,8 +53,9 @@ app.whenReady().then(async () => {
   })()`));
 
   // ---------- 2. 走完 8 步引导 ----------
+  // 引导页现在统一用「立绘 + 贴着的气泡」，台词在 .scene-text 里
   async function stepText() {
-    return js(`(document.querySelector('.onboard .speech-text')||{}).textContent || ''`);
+    return js(`(document.querySelector('.onboard .scene-text')||{}).textContent || ''`);
   }
   async function clickNext(label) {
     const ok = await js(`(function(){

@@ -14,20 +14,17 @@
     targetWeightKg: '', speed: 'normal'
   };
 
+  // 有表单的步骤，立绘缩一档，给输入框留地方
+  var FORM_STEPS = { name: 1, birthday: 1, gender: 1, body: 1, activity: 1, goal: 1 };
+
+  /** 小克说一句：立绘 + 贴着她弹出的气泡（全 App 统一的说话方式） */
   function say(host, scene, extra) {
-    var c = JF.chloe.active();
-    var text = JF.chloe.pick(scene, Object.assign({ name: draft.name || '你' }, extra || {}), true);
-    host.appendChild(el('div', { class: 'onboard-say' }, [
-      el('img', {
-        class: 'onboard-face',
-        src: JF.chloe.facePath(scene === 'askActivity' ? 'cheer' : (scene === 'onboardDone' ? 'laugh' : 'calm')),
-        alt: ''
-      }),
-      el('div', { class: 'speech' }, [
-        el('div', { class: 'speech-name', text: c.name }),
-        el('div', { class: 'speech-text', text: text })
-      ])
-    ]));
+    var line = JF.chloe.pickLine(scene, Object.assign({ name: draft.name || '你' }, extra || {}), true);
+    host.appendChild(JF.chloe.renderScene({
+      text: line.text,
+      pose: line.pose,
+      className: 'scene-onboard' + (FORM_STEPS[STEPS[idx]] ? ' scene-sm' : '')
+    }));
   }
 
   function next(host) { idx++; renderInto(host); }
@@ -48,20 +45,14 @@
   function renderInto(host) {
     U.clear(host);
     var step = STEPS[idx];
-    var c = JF.chloe.active();
 
-    // 第 1 屏用「立绘 + 贴着她弹出的气泡」，不再单独放顶部立绘和下方对话框
+    // 每一步都是「立绘 + 贴着她弹出的气泡」，不再有单独的顶部立绘或 Q 版
     if (step === 'welcome') {
-      var line = JF.chloe.pickLine('firstMeet', {}, true);
-      host.appendChild(JF.chloe.renderScene({ text: line.text, pose: line.pose, className: 'scene-onboard' }));
+      say(host, 'firstMeet');
       navButtons(host, { label: '开始', onNext: function () { next(host); } });
       host.appendChild(el('div', { class: 'onboard-step', text: '第 1 / ' + STEPS.length + ' 步' }));
       return;
     }
-
-    host.appendChild(el('div', { class: 'onboard-top' }, [
-      el('img', { src: idx <= 1 ? c.assets.portrait : c.assets.chibi, alt: c.name })
-    ]));
 
     if (step === 'name') {
       say(host, 'askName');
