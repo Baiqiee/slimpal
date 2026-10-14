@@ -1,4 +1,4 @@
-﻿/* 桌面端自检：验证「页面 → preload → 主进程 → 数据文件」这条链路真的通。
+/* 桌面端自检：验证「页面 → preload → 主进程 → 数据文件」这条链路真的通。
  * 用的是 main.js 同一份 desktop-core 和同一份 preload.js。
  */
 const { app, BrowserWindow } = require('electron');

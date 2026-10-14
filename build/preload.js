@@ -1,4 +1,4 @@
-﻿/* 减肥姬 — 预加载脚本：把桌面端能力暴露给页面
+/* 减肥姬 — 预加载脚本：把桌面端能力暴露给页面
  * 只暴露这几个明确的方法，页面拿不到 Node 的任何东西。
  */
 const { contextBridge, ipcRenderer } = require('electron');
