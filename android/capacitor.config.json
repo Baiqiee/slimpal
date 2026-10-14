@@ -1,0 +1,10 @@
+{
+  "appId": "com.jianfeiji.app",
+  "appName": "减肥姬",
+  "webDir": "../app",
+  "android": {
+    "backgroundColor": "#FCE7EC",
+    "allowMixedContent": false,
+    "webContentsDebuggingEnabled": false
+  }
+}

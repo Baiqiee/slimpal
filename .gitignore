@@ -1,0 +1,52 @@
+# ============================================================
+# 减肥姬 · 仓库忽略规则
+# 原则：只提交"源码 + 素材 + 文档"，其余（依赖、构建产物、本地工具链、
+#       开发中间产物、密钥）一律不进仓库。
+# ============================================================
+
+# ---------- 依赖 ----------
+node_modules/
+
+# ---------- 构建产物 ----------
+dist/
+build/icon-ico/
+*.blockmap
+
+# ---------- 本地工具链（约 1 GB，可重新下载，不进仓库）----------
+# JDK / Android SDK / 安装包缓存，重建方式见 README
+tools/dl/
+tools/jdk/
+tools/android-sdk/
+
+# ---------- 开发中间产物（都能用 tools/ 里的脚本重新生成）----------
+__pycache__/
+*.pyc
+tools/preview/
+tools/shots/
+tools/.shot-profile/
+tools/.verify-profile/
+tools/.e2e-profile/
+tools/.pkg-profile/
+tools/app-log.txt
+tools/app-err.txt
+tools/chrome.log
+
+# ---------- 密钥：签名文件与密码，绝不进仓库 ----------
+# 这两样是安卓升级安装的凭据，丢了就不能覆盖安装，
+# 但也不该进版本库（万一以后推到远端会泄露）。
+# 请单独备份到安全的地方，详见 使用说明.md 第九节。
+android/jianfeiji.keystore
+android/android/keystore.properties
+*.jks
+*.keystore
+keystore.properties
+
+# ---------- 系统与编辑器垃圾 ----------
+Thumbs.db
+Desktop.ini
+.DS_Store
+.idea/
+.vscode/
+*.swp
+*~
+*.log
