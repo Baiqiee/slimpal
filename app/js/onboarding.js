@@ -235,7 +235,12 @@
 
   function render(host) {
     idx = 0;
-    renderInto(host);
+    U.clear(host);
+    // 内容包一层：靠 margin:auto 把剩余空间分给上下，实现上下居中。
+    // 比在 .onboard 上写 justify-content:center 安全——内容比屏幕高时不会裁掉顶部。
+    var inner = el('div', { class: 'onboard-inner' });
+    host.appendChild(inner);
+    renderInto(inner);
   }
 
   JF.onboarding = { render: render };

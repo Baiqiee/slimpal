@@ -1,4 +1,4 @@
-/* 减肥姬 — 全部样式
+﻿/* 减肥姬 — 全部样式
  * 配色取自小克本人的色板：粉外套、白上衣、暖白底。
  */
 
@@ -392,6 +392,8 @@ body { display: flex; justify-content: center; }
   padding: 18px 18px calc(18px + env(safe-area-inset-bottom));
   overflow-y: auto;
 }
+/* 引导内容整体上下居中：剩余空间平分给上下两个 auto 外边距 */
+.onboard-inner { margin: auto 0; width: 100%; flex: 0 0 auto; }
 .onboard-top { display: flex; align-items: flex-end; justify-content: center; height: 30vh; min-height: 170px; }
 .onboard-top img { height: 100%; width: auto; object-fit: contain; filter: drop-shadow(0 10px 18px rgba(180,120,140,.2)); }
 .onboard-say { display: flex; gap: 10px; align-items: flex-start; margin: 12px 0 16px; }
