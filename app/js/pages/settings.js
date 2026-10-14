@@ -186,16 +186,16 @@
 
     // 小克
     host.appendChild(ui.card({
-      title: '陪我的人',
+      title: '虚拟姬',
       children: [
         el('div', { class: 'chara-head' }, [
           el('img', { class: 'chara-face', src: JF.chloe.facePath('calm'), alt: '' }),
           el('div', { class: 'chara-body' }, [
             el('div', { class: 'chara-name' }, [c.name, el('span', { class: 'chara-en', text: ' ' + c.nameEn })]),
-            el('div', { class: 'small', text: c.intro }),
-            el('div', { class: 'aff-heart mt8', text: '好感度 ' + aff.points + ' · ' + aff.name }),
-            aff.nextAt ? el('div', { class: 'small', text: '再 ' + aff.toNext + ' 点升级' }) : null
-          ].filter(Boolean))
+            // 三行之间用同一个间距（见 CSS 的 .chara-intro / .chara-aff）
+            el('div', { class: 'chara-intro', text: c.intro }),
+            el('div', { class: 'chara-aff', text: '好感度 ' + aff.points + ' · ' + aff.name })
+          ])
         ]),
         el('div', { class: 'small mt12 mb8', text: '她现在的表情（点一下可以看大图）' }),
         el('div', { class: 'face-grid' }, Object.keys(c.assets.faces).map(function (k) {

@@ -517,6 +517,9 @@ body { display: flex; justify-content: center; }
 .chara-body { min-width: 0; }
 .chara-name { font-size: 16px; font-weight: 700; }
 .chara-en { font-size: 11px; color: var(--ink-3); font-weight: 400; }
+/* 简介和好感度各自和上一行保持同样的间距，三行读起来才匀 */
+.chara-intro { font-size: 12px; color: var(--ink-3); margin-top: 7px; }
+.chara-aff { font-size: 13px; color: var(--pink-deep); font-weight: 700; margin-top: 7px; }
 
 /* ---------- 记录后的即时反应（小克跳出来说一句）---------- */
 .react-pop {

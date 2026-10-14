@@ -472,6 +472,47 @@ test('#11 设置-关于：去掉说明文字，加上制作人', async () => {
   return '关于：' + Object.keys(v.rows).map(k => k + '=' + v.rows[k]).join(' / ');
 });
 
+test('#12 设置里的「虚拟姬」卡片：标题、间距、去掉升级提示', async () => {
+  await resetToOnboarding();
+  await seedAndEnter();
+  await js(`JF.app.openSettings(); 1`);
+  await wait(500);
+  const v = JSON.parse(await js(`(function(){
+    var cards = [].slice.call(document.querySelectorAll('.onboard .card'));
+    var card = cards.filter(function(c){
+      var t = (c.querySelector('.card-title')||{}).textContent || '';
+      return t === '虚拟姬' || t === '陪我的人';
+    })[0];
+    if (!card) return JSON.stringify({err:'设置里找不到这张角色卡片'});
+    var name = card.querySelector('.chara-name');
+    var intro = card.querySelector('.chara-intro');
+    var aff = card.querySelector('.chara-aff');
+    var r = function(n){ return n ? n.getBoundingClientRect() : null; };
+    var rn = r(name), ri = r(intro), ra = r(aff);
+    return JSON.stringify({
+      title: card.querySelector('.card-title').textContent,
+      gapNameIntro: (rn && ri) ? Math.round(ri.top - rn.bottom) : null,
+      gapIntroAff: (ri && ra) ? Math.round(ra.top - ri.bottom) : null,
+      hasIntro: !!intro, hasAff: !!aff,
+      texts: card.textContent,
+      oldTitleAnywhere: /陪我的人/.test(document.querySelector('.onboard').textContent),
+      upgradeLeft: /再\\s*\\d+\\s*点升级/.test(document.querySelector('.onboard').textContent)
+    });
+  })()`));
+  assert(!v.err, v.err);
+  assertEqual(v.title, '虚拟姬', '角色卡片的标题');
+  assert(!v.oldTitleAnywhere, '设置里还有「陪我的人」这个旧标题');
+  assert(v.hasIntro && v.hasAff, '角色卡片里缺简介或好感度');
+  assert(!v.upgradeLeft, '「再 N 点升级」还在');
+  assert(v.gapNameIntro !== null && v.gapIntroAff !== null, '量不到行间距');
+  assert(v.gapNameIntro >= 4, '名字和简介贴太近了（' + v.gapNameIntro + 'px）');
+  assert(Math.abs(v.gapNameIntro - v.gapIntroAff) <= 2,
+    '简介和好感度的间距与名字和简介的间距不一致（' + v.gapNameIntro + 'px vs ' + v.gapIntroAff + 'px）');
+  await js(`(function(){var b=document.querySelector('.onboard .icon-btn'); if(b) b.click(); return 1;})()`);
+  await wait(250);
+  return '标题「' + v.title + '」；行间距 ' + v.gapNameIntro + 'px / ' + v.gapIntroAff + 'px';
+});
+
 // ---------------------------------------------------------------- 运行环境
 
 let win = null;
