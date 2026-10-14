@@ -147,57 +147,6 @@ body { display: flex; justify-content: center; }
   font-size: 12px; font-family: inherit; cursor: pointer; padding: 2px 4px;
 }
 
-/* ---------- 首页主角区 ---------- */
-.hero-root { position: relative; margin-bottom: 12px; }
-
-.hero-stage {
-  position: relative;
-  height: 40vh; min-height: 250px; max-height: 380px;
-  display: flex; align-items: flex-end; justify-content: center;
-  margin-bottom: -6px;
-}
-.hero-portrait {
-  height: 100%; width: auto; max-width: 78%;
-  object-fit: contain; object-position: bottom center;
-  filter: drop-shadow(0 10px 18px rgba(180, 120, 140, .22));
-  animation: heroIn .5s ease-out, floaty 5.5s ease-in-out 0.5s infinite;
-}
-@keyframes heroIn { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
-@keyframes floaty { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-6px); } }
-
-.hero-row { display: flex; align-items: flex-start; gap: 10px; }
-.hero-avatar {
-  position: relative; flex: 0 0 auto;
-  width: 68px; height: 68px; border-radius: 50%;
-  overflow: hidden; cursor: pointer;
-  border: 3px solid #fff;
-  box-shadow: 0 4px 12px rgba(190, 130, 150, .3);
-  background: var(--pink-soft);
-}
-.hero-face { width: 100%; height: 100%; object-fit: cover; display: block; }
-.hero-tap { position: absolute; inset: 0; }
-
-.speech {
-  position: relative; flex: 1 1 auto;
-  background: #fff; border-radius: var(--r-md);
-  padding: 10px 12px 9px;
-  box-shadow: var(--shadow);
-  min-height: 62px;
-}
-.speech::before {
-  content: ''; position: absolute; left: -6px; top: 20px;
-  width: 12px; height: 12px; background: #fff;
-  transform: rotate(45deg); border-radius: 2px;
-}
-.speech-name { font-size: 11px; color: var(--pink-deep); font-weight: 700; margin-bottom: 2px; }
-.speech-text { font-size: 14px; line-height: 1.45; }
-.speech-foot { text-align: right; margin-top: 1px; height: 16px; }
-.speech-more {
-  border: none; background: none; color: var(--ink-3);
-  font-size: 11px; font-family: inherit; cursor: pointer; padding: 1px 2px;
-}
-.speech-more:active { color: var(--pink-deep); }
-
 /* ---------- 通用场景：立绘 + 从她头顶弹出的气泡 ----------
    引导页、首页、里程碑庆祝都用这一套。气泡在上、尾巴朝下指着她，
    不再用"小圆头像 + 下面的对话框"那种两段式。 */
@@ -241,6 +190,18 @@ body { display: flex; justify-content: center; }
 /* 尺寸档位 */
 .scene-lg .scene-portrait { height: 38vh; }
 .scene-sm .scene-portrait { height: 24vh; min-height: 120px; }
+
+/* 首页：她本人 + 轻轻浮动，点一下有弹跳反馈 */
+.home-scene { margin-bottom: 12px; }
+.home-scene .scene-portrait { animation: floaty 5.5s ease-in-out infinite; }
+@keyframes floaty { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-6px); } }
+
+.scene.poked .scene-portrait { animation: pokeBounce .44s cubic-bezier(.3, 1.5, .5, 1); }
+@keyframes pokeBounce {
+  0%   { transform: scale(1) translateY(0); }
+  35%  { transform: scale(1.035) translateY(-5px); }
+  100% { transform: scale(1) translateY(0); }
+}
 
 /* 白底面板：列表都放在这里面，别直接躺在粉底上 */
 .panel {

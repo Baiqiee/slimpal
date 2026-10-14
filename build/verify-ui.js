@@ -261,6 +261,71 @@ test('#6 介绍结束：注册表单从下方顶上来，把她推上去', async
   return '转场动画只播一次；第一步字段：' + v.firstFieldLabel;
 });
 
+test('#7 首页也用「立绘 + 气泡」，点击小克有互动反馈', async () => {
+  await resetToOnboarding();
+  await seedAndEnter();
+
+  const v = JSON.parse(await js(`(function(){
+    var scene = document.querySelector('.view .scene.home-scene');
+    if (!scene) return JSON.stringify({err:'首页没有 .scene.home-scene'});
+    var bubble = scene.querySelector(':scope > .scene-bubble');
+    var img    = scene.querySelector('.scene-portrait');
+    var br = bubble.getBoundingClientRect(), ir = img.getBoundingClientRect();
+    var after = getComputedStyle(bubble, '::after');
+    return JSON.stringify({
+      bubbleBottom: Math.round(br.bottom),
+      imgTop: Math.round(ir.top),
+      tail: after.content,
+      old: document.querySelectorAll('.hero-root, .hero-avatar, .hero-stage, .speech').length,
+      text: (scene.querySelector('.scene-text') || {}).textContent || '',
+      hasPoke: !!JF.chloe.active().lines.poke,
+      pokeCount: (JF.chloe.active().lines.poke || []).length
+    });
+  })()`));
+  assert(!v.err, v.err);
+  assert(v.bubbleBottom <= v.imgTop + 10,
+    '首页气泡没贴在立绘上方（气泡底 ' + v.bubbleBottom + '，立绘顶 ' + v.imgTop + '）');
+  assert(v.tail && v.tail !== 'none', '首页气泡没有朝下的小尾巴');
+  assertEqual(v.old, 0, '首页还留着旧的「小圆头像 + 下方对话框」结构');
+  assert(v.text.length > 0, '首页气泡没有文字');
+  assert(v.hasPoke && v.pokeCount >= 3, '角色包没有配「被戳」的台词');
+
+  // 点她本人：台词必须来自 poke 那一组，并触发弹跳
+  const pokeBank = JSON.parse(await js(`JSON.stringify(JF.chloe.active().lines.poke)`));
+  const seenText = new Set();
+  const seenPose = new Set();
+  let sawPokedClass = false;
+  for (let i = 0; i < 8; i++) {
+    await js(`document.querySelector('.view .home-scene .scene-portrait').click(); 1`);
+    await wait(180);
+    const r = JSON.parse(await js(`(function(){
+      var scene = document.querySelector('.view .home-scene');
+      return JSON.stringify({
+        text: (scene.querySelector('.scene-text') || {}).textContent || '',
+        pose: (scene.querySelector('.scene-portrait') || {}).getAttribute('src') || '',
+        poked: scene.classList.contains('poked')
+      });
+    })()`));
+    seenText.add(r.text);
+    seenPose.add(r.pose);
+    if (r.poked) sawPokedClass = true;
+  }
+  const bad = [...seenText].filter(t => pokeBank.indexOf(t) === -1);
+  assertEqual(bad.length, 0, '点了她之后说的不是「被戳」台词：' + bad.join(' | '));
+  assert(sawPokedClass, '点她之后没有触发弹跳反馈（缺 .poked）');
+  assert(seenText.size >= 2, '连点 8 次台词一直没变，互动感是假的');
+  assert(seenPose.size >= 2, '连点 8 次姿势一直没变');
+
+  // 「换一句」换成当前场景的台词，而不是被戳台词
+  const before = await js(`document.querySelector('.view .home-scene .scene-text').textContent`);
+  await js(`document.querySelector('.view .home-scene .scene-more').click(); 1`);
+  await wait(200);
+  const after = await js(`document.querySelector('.view .home-scene .scene-text').textContent`);
+  assert(after.length > 0, '「换一句」之后气泡空了');
+  return '点击 8 次得到 ' + seenText.size + ' 种回应 / ' + seenPose.size + ' 种姿势；换一句：'
+    + before.slice(0, 10) + '… → ' + after.slice(0, 10) + '…';
+});
+
 // ---------------------------------------------------------------- 运行环境
 
 let win = null;

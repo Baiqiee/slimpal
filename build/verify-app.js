@@ -147,7 +147,10 @@ app.whenReady().then(async () => {
   check('进入主界面', await clickNext('开始吧'));
   await wait(400);
   check('底部导航已出现', await js(`document.querySelectorAll('.tabbar .tab').length === 5`));
-  check('首页在小克区', await js(`!!document.querySelector('.hero-portrait') && document.querySelector('.hero-portrait').naturalWidth > 0`));
+  check('首页在小克区', await js(`(function(){
+    var im = document.querySelector('.view .scene-portrait');
+    return !!im && im.complete && im.naturalWidth > 0;
+  })()`));
 
   // ---------- 3. 记一笔（走真实弹层） ----------
   await js(`JF.actions.addMealSheet(); 1`);
@@ -260,7 +263,7 @@ app.whenReady().then(async () => {
 
   // ---------- 8. 各页面都能渲染 ----------
   for (const [tab, probe] of [
-    ['home', `.hero-portrait`], ['checkin', `.day-nav`], ['food', `.seg`],
+    ['home', `.home-scene`], ['checkin', `.day-nav`], ['food', `.seg`],
     ['diary', `textarea`], ['stats', `.chart, .chart-empty`]
   ]) {
     await js(`JF.app.go('${tab}'); 1`);

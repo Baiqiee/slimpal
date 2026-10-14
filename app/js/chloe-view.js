@@ -147,70 +147,16 @@
   }
 
   /** 首页该显示的那一句 */
+  /** 首页那句：场景决定说什么、摆什么姿势 */
   function homeLine() {
     var info = currentScene();
+    var picked = pickLine(info.scene, info.ctx);
     return {
-      text: pick(info.scene, info.ctx),
-      expr: exprOverride || info.expr,
+      text: picked.text,
+      pose: picked.pose,
       scene: info.scene,
       ctx: info.ctx
     };
-  }
-
-  function setExpression(key) {
-    exprOverride = key;
-    setTimeout(function () { exprOverride = null; }, 6000);
-  }
-
-  // ---------- 渲染 ----------
-  function faceImg(key, cls) {
-    return U.el('img', { class: cls || 'hero-face', src: facePath(key), alt: '' });
-  }
-
-  /**
-   * 首页主角区。
-   * opts: { pose: 'portrait'|'alt'|'back', showBubble: bool }
-   */
-  function renderHero(opts) {
-    opts = opts || {};
-    var c = active();
-    var line = homeLine();
-    var pose = opts.pose || 'portrait';
-    var src = pose === 'alt' ? c.assets.portraitAlt : (pose === 'back' ? c.assets.portraitBack : c.assets.portrait);
-
-    var portrait = U.el('img', { class: 'hero-portrait', src: src, alt: c.name });
-
-    var speechText = U.el('div', { class: 'speech-text', text: line.text });
-    var bubble = U.el('div', { class: 'speech' }, [
-      U.el('div', { class: 'speech-name' }, [c.name]),
-      speechText,
-      U.el('div', { class: 'speech-foot' }, [
-        U.el('button', {
-          class: 'speech-more', type: 'button', title: '换一句',
-          onclick: function (e) {
-            e.stopPropagation();
-            speechText.textContent = pick(line.scene, line.ctx, true);
-          }
-        }, ['换一句'])
-      ])
-    ]);
-
-    var avatar = U.el('div', { class: 'hero-avatar' }, [
-      faceImg(line.expr, 'hero-face'),
-      U.el('div', {
-        class: 'hero-tap', title: '戳一下',
-        onclick: function () {
-          setExpression(['happy', 'shy', 'bashful', 'cheer'][Math.floor(Math.random() * 4)]);
-          var t = pick('idle', line.ctx, true);
-          document.querySelector('.hero-root .speech-text').textContent = t;
-        }
-      })
-    ]);
-
-    return U.el('div', { class: 'hero-root' }, [
-      U.el('div', { class: 'hero-stage' }, [portrait]),
-      U.el('div', { class: 'hero-row' }, [avatar, bubble])
-    ]);
   }
 
   // ---------- 通用场景：立绘 + 从她头顶弹出的气泡 ----------
@@ -273,8 +219,6 @@
     homeLine: homeLine,
     context: context,
     currentScene: currentScene,
-    renderHero: renderHero,
-    setExpression: setExpression,
     hasLine: hasLine
   };
 })(window.JF = window.JF || {});

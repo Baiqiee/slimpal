@@ -167,9 +167,40 @@
     });
   }
 
+  // 首页主角区：立绘 + 贴着她弹出的气泡（和引导页、里程碑庆祝同一套组件）。
+  // 点她本人会有反应：换姿势，并说一句"被戳"的话。
+  function heroScene() {
+    var line = JF.chloe.homeLine();
+    var scene;
+
+    function poke() {
+      var p = JF.chloe.pickLine('poke', JF.chloe.context(), true);
+      scene.setText(p.text);
+      scene.setPose(p.pose);
+      // 重新触发一次弹跳动画：先摘掉 class 并强制重排
+      scene.classList.remove('poked');
+      void scene.offsetWidth;
+      scene.classList.add('poked');
+    }
+
+    scene = JF.chloe.renderScene({
+      text: line.text,
+      pose: line.pose,
+      size: 'lg',
+      className: 'home-scene',
+      onTap: poke,
+      onMore: function () {
+        var again = JF.chloe.pickLine(line.scene, line.ctx, true);
+        scene.setText(again.text);
+        scene.setPose(again.pose);
+      }
+    });
+    return scene;
+  }
+
   function render(host, nav) {
     U.clear(host);
-    host.appendChild(JF.chloe.renderHero({}));
+    host.appendChild(heroScene());
 
     host.appendChild(el('div', { class: 'quick-row' }, [
       el('button', { class: 'quick', type: 'button', onclick: function () { A.weighSheet(nav.refresh); } }, [
