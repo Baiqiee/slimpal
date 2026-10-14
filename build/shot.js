@@ -95,8 +95,11 @@ app.whenReady().then(async () => {
     }
   });
 
+  // 必须用可见窗口：隐藏窗口的合成帧会滞后好几个节拍，
+  // 截出来的图会缺内容（立绘、导航头像这类后加载的图片尤其明显，
+  // 之前就因此误判过"立绘被冲淡"和"导航头像没显示"）。
   const win = new BrowserWindow({
-    width: 430, height: 900, show: false,
+    width: 430, height: 900, show: true,
     backgroundColor: '#FCE7EC',
     webPreferences: { contextIsolation: true, nodeIntegration: false, backgroundThrottling: false }
   });

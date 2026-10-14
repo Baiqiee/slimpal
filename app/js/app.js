@@ -26,8 +26,9 @@
       var on = t.id === current;
       var glyph;
       if (t.center) {
+        // 中间那个钮放她的脸部特写（不是 Q 版），占满整个圆
         glyph = el('div', { class: 'tab-glyph' }, [
-          el('img', { class: 'tab-chibi', src: JF.chloe.active().assets.chibi, alt: t.label })
+          el('img', { class: 'tab-face', src: JF.chloe.active().assets.navFace, alt: t.label })
         ]);
       } else {
         glyph = el('div', { class: 'tab-glyph', text: t.glyph });

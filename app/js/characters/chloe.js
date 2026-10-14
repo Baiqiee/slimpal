@@ -21,6 +21,7 @@
       portraitBack: A + 'portrait-back.png',
       portraitAlt: A + 'portrait-alt.png',
       chibi: A + 'chibi.png',
+      navFace: A + 'nav-face.png',      // 底部导航正中间那个圆钮用的脸部特写
       faces: {
         calm: A + 'calm.png',
         laugh: A + 'laugh.png',

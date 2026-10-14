@@ -345,6 +345,41 @@ test('#8 左上角标题是角色名，不是 App 名', async () => {
   return '标题「' + v.title + '」/ 副标题「' + v.sub + '」';
 });
 
+test('#9 导航正中间是小克的脸部特写，不是 Q 版', async () => {
+  await resetToOnboarding();
+  await seedAndEnter();
+  const v = JSON.parse(await js(`(function(){
+    var glyph = document.querySelector('.tab.center .tab-glyph');
+    var img = document.querySelector('.tab.center .tab-face');
+    if (!glyph) return JSON.stringify({err:'导航中间没有 .tab-glyph'});
+    if (!img) return JSON.stringify({err:'导航中间不是图片'});
+    var gr = glyph.getBoundingClientRect(), ir = img.getBoundingClientRect();
+    return JSON.stringify({
+      src: img.getAttribute('src'),
+      loaded: img.complete && img.naturalWidth > 0,
+      natural: img.naturalWidth,
+      fillW: Math.round(ir.width / gr.width * 100),
+      fillH: Math.round(ir.height / gr.height * 100),
+      round: getComputedStyle(glyph).borderRadius,
+      clip: getComputedStyle(glyph).overflow,
+      chibiInTab: document.querySelectorAll('.tabbar img[src*="chibi"]').length,
+      chibiAnywhere: Array.prototype.slice.call(document.querySelectorAll('img[src*="chibi"]'))
+        .map(function(x){ return x.className + '@' + (x.closest('.card') ? 'card' : (x.closest('.tabbar') ? 'tabbar' : 'other')); }),
+      expected: JF.chloe.active().assets.navFace
+    });
+  })()`));
+  assert(!v.err, v.err);
+  assertEqual(v.src, v.expected, '导航头像的图源');
+  assert(!/chibi/.test(v.src), '导航中间还是 Q 版：' + v.src);
+  assert(v.loaded, '导航头像没加载出来');
+  assert(v.fillW >= 80 && v.fillH >= 80, '头像没有占满圆钮（' + v.fillW + '% x ' + v.fillH + '%）');
+  assertEqual(v.round, '50%', '圆钮不是圆形');
+  assertEqual(v.clip, 'hidden', '圆钮没有裁剪，头像是方形的');
+  assertEqual(v.chibiInTab, 0, '导航条里还混着 Q 版图标：' + v.chibiAnywhere.join('、'));
+  return v.src.split('/').pop() + '，占满 ' + v.fillW + '% x ' + v.fillH + '%'
+    + (v.chibiAnywhere.length ? '（页面别处仍有 Q 版空态图：' + v.chibiAnywhere.join('、') + '）' : '');
+});
+
 // ---------------------------------------------------------------- 运行环境
 
 let win = null;
