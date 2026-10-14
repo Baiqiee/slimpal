@@ -1,18 +1,18 @@
 {
-  "name": "jianfeiji",
-  "productName": "减肥姬",
-  "version": "1.1.0",
-  "description": "本地减肥陪伴 App —— 不联网、不登录，数据只存在你自己的设备上",
+  "name": "slimpal",
+  "productName": "SlimPal",
+  "version": "1.2.0",
+  "description": "SlimPal — 本地减肥陪伴 App。不联网、不登录，数据只存在你自己的设备上",
   "main": "main.js",
   "private": true,
-  "author": "personal",
+  "author": "baiqiee",
   "devDependencies": {
     "electron": "^44.7.2",
     "electron-builder": "^26.15.3"
   },
   "build": {
-    "appId": "com.jianfeiji.desktop",
-    "productName": "减肥姬",
+    "appId": "com.slimpal.desktop",
+    "productName": "SlimPal",
     "directories": {
       "output": "../dist",
       "buildResources": "."
@@ -42,7 +42,7 @@
         }
       ],
       "icon": "icon.png",
-      "executableName": "JianfeiJi"
+      "executableName": "SlimPal"
     },
     "nsis": {
       "oneClick": false,
@@ -50,9 +50,9 @@
       "allowToChangeInstallationDirectory": true,
       "createDesktopShortcut": true,
       "createStartMenuShortcut": true,
-      "shortcutName": "减肥姬",
-      "artifactName": "减肥姬-${version}-安装程序.${ext}",
-      "uninstallDisplayName": "减肥姬"
+      "shortcutName": "SlimPal",
+      "artifactName": "SlimPal-${version}-Setup.${ext}",
+      "uninstallDisplayName": "SlimPal"
     }
   }
 }

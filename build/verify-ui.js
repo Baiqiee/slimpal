@@ -336,11 +336,11 @@ test('#8 左上角标题是角色名，不是 App 名', async () => {
       title: t ? t.textContent : '(没有标题)',
       sub: s ? s.textContent : '',
       charName: JF.chloe.active().name,
-      appNameInAbout: '减肥姬'
+      appNameInAbout: 'SlimPal'
     });
   })()`));
   assertEqual(v.title, v.charName, '左上角标题');
-  assert(v.title !== v.appNameInAbout, '左上角还是显示 App 名「减肥姬」');
+  assert(v.title !== v.appNameInAbout, '左上角还是显示 App 名「SlimPal」');
   assert(v.sub.length > 0, '问候语没了');
   return '标题「' + v.title + '」/ 副标题「' + v.sub + '」';
 });
@@ -465,7 +465,7 @@ test('#11 设置-关于：去掉说明文字，加上制作人', async () => {
   assert(v.text.indexOf('以后还会住进别的减肥姬') === -1, '「以后还会住进别的减肥姬」还在关于里');
   assert(!v.bodyHasNote, '设置页别处还残留这句说明');
   assertEqual(v.rows['制作人'], '白切', '关于里的制作人');
-  assertEqual(v.rows['App'], '减肥姬', '关于里的 App 名');
+  assertEqual(v.rows['App'], 'SlimPal', '关于里的 App 名');
   assert(/小克/.test(v.rows['当前角色'] || ''), '关于里的当前角色不对：' + v.rows['当前角色']);
   await js(`(function(){var b=document.querySelector('.onboard .icon-btn'); if(b) b.click(); return 1;})()`);
   await wait(250);
@@ -597,7 +597,7 @@ function js(code) { return win.webContents.executeJavaScript(code); }
 /** 清空数据回到引导页（localStorage 和桌面数据文件都要清，否则会读回旧资料直接进主界面） */
 async function resetToOnboarding() {
   await js(`(function(){
-    try { window.jianfeijiNative.save(''); } catch (e) {}
+    try { window.slimpalNative.save(''); } catch (e) {}
     localStorage.clear();
     return 1;
   })()`);

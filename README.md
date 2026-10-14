@@ -1,4 +1,4 @@
-# 减肥姬
+﻿# 减肥姬
 
 一个只给自己用的、**完全离线的减肥陪伴 App**。不登录、不联网、不上传，所有数据只存在本机。
 
@@ -17,9 +17,9 @@ v1.0 已完成并验证，产物在 `dist/`：
 
 | 产物 | 说明 |
 |---|---|
-| `减肥姬-1.1.0-安装程序.exe` | Windows 安装包（NSIS，约 110 MB） |
-| `减肥姬-1.1-android.apk` | 安卓安装包（自签名，约 8.5 MB） |
-| `win-unpacked/JianfeiJi.exe` | Windows 免安装版 |
+| `SlimPal-1.2.0-Setup.exe` | Windows 安装包（NSIS，约 110 MB） |
+| `SlimPal-1.2-android.apk` | 安卓安装包（自签名，约 8.5 MB） |
+| `win-unpacked/SlimPal.exe` | Windows 免安装版 |
 
 iPhone 版按需求方决定暂不做（原因见 PRD 第 9 节）。
 
@@ -28,7 +28,7 @@ iPhone 版按需求方决定暂不做（原因见 PRD 第 9 节）。
 ## 目录结构
 
 ```
-jianfeiji/
+slimpal/
 ├─ app/                     ← 应用本体：纯 HTML/CSS/JS，无构建步骤，三端共用
 │  ├─ index.html
 │  ├─ css/app.css
@@ -186,5 +186,5 @@ Remove-Item Env:ELECTRON_RUN_AS_NODE -ErrorAction SilentlyContinue
 
 ## 密钥提醒
 
-安卓签名文件 `android/jianfeiji.keystore` 与 `android/android/keystore.properties`
+安卓签名文件 `android/slimpal.keystore` 与 `android/android/keystore.properties`
 **已被 .gitignore 排除**，请单独备份。丢了就不能对已装的 App 做覆盖升级。

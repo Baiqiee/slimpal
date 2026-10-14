@@ -1,4 +1,4 @@
-/* 减肥姬 — 提醒
+﻿/* 减肥姬 — 提醒
  *
  * 规则：只要「最近一次记录饮食」或「上次提醒」超过 23 小时，就该提醒一次；
  * 提醒后计时重新开始，所以最多一天一次。
@@ -22,7 +22,7 @@
     } catch (e) { return null; }
   }
 
-  function native() { return window.jianfeijiNative || null; }
+  function native() { return window.slimpalNative || null; }
 
   function minutesOf(hhmm) {
     var p = String(hhmm || '0:0').split(':');
@@ -83,7 +83,7 @@
   }
 
   // ---------- 三种通道 ----------
-  var CHANNEL_ID = 'jianfeiji-reminder';
+  var CHANNEL_ID = 'slimpal-reminder';
   var NOTIFY_ID = 1024;
   var androidReady = null;
 

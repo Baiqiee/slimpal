@@ -1,4 +1,4 @@
-/* 减肥姬 — 应用外壳：路由、底部导航、启动流程 */
+﻿/* 减肥姬 — 应用外壳：路由、底部导航、启动流程 */
 (function (JF) {
   'use strict';
 
@@ -212,7 +212,7 @@
   }
 
   function boot() {
-    JF.native = window.jianfeijiNative || null;
+    JF.native = window.slimpalNative || null;
     JF.store.load();
     if (!S.profile()) {
       showOnboarding();

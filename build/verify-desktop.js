@@ -1,4 +1,4 @@
-/* 桌面端自检：验证「页面 → preload → 主进程 → 数据文件」这条链路真的通。
+﻿/* 桌面端自检：验证「页面 → preload → 主进程 → 数据文件」这条链路真的通。
  * 用的是 main.js 同一份 desktop-core 和同一份 preload.js。
  */
 const { app, BrowserWindow } = require('electron');
@@ -48,8 +48,8 @@ app.whenReady().then(async () => {
   await wait(900);
 
   // 1) preload 是否暴露了接口
-  const hasBridge = await win.webContents.executeJavaScript('!!window.jianfeijiNative');
-  check('preload 暴露 jianfeijiNative', hasBridge === true);
+  const hasBridge = await win.webContents.executeJavaScript('!!window.slimpalNative');
+  check('preload 暴露 slimpalNative', hasBridge === true);
 
   // 2) 页面脚本是否全部加载
   const mods = await win.webContents.executeJavaScript(
@@ -94,15 +94,15 @@ app.whenReady().then(async () => {
   check('重开后不进引导页', a.onboarded === true);
 
   // 5) 通知链路
-  await win.webContents.executeJavaScript(`window.jianfeijiNative.notify('测试标题','测试内容'); 1`);
+  await win.webContents.executeJavaScript(`window.slimpalNative.notify('测试标题','测试内容'); 1`);
   await wait(300);
   check('通知送达主进程', notifications.length === 1 && notifications[0].title === '测试标题',
     JSON.stringify(notifications));
 
   // 6) 开机自启读写
   const auto = await win.webContents.executeJavaScript(`
-    window.jianfeijiNative.setAutostart(true);
-    String(window.jianfeijiNative.getAutostart());
+    window.slimpalNative.setAutostart(true);
+    String(window.slimpalNative.getAutostart());
   `);
   await wait(250);
   check('开机自启可设置', autostartValue === true && auto === 'true', 'returned=' + auto);

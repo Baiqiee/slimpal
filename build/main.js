@@ -1,4 +1,4 @@
-/* 减肥姬 — Electron 主进程
+/* SlimPal — Electron 主进程
  *
  * 职责：
  *  1. 用自定义协议 app:// 提供页面（协议与数据读写见 desktop-core.js）
@@ -15,9 +15,11 @@ const fs = require('node:fs');
  * 万一 Electron 自己起不来（例如 require('electron') 就抛了），
  * 普通 diag() 会因为拿不到 userData 路径而什么都写不出来，
  * 结果就是"程序一闪而过、一点线索都没有"。这一段就是为了那种情况留的。
- * 路径与 Electron 的 userData 保持一致：%APPDATA%\减肥姬\
+ * 路径与 Electron 的 userData 保持一致：%APPDATA%\SlimPal\
  */
-const APP_NAME_DIR = '减肥姬';
+const APP_NAME_DIR = 'SlimPal';
+/** 改名前（v1.1 及以前）叫这个名字，userData 目录也跟着叫那个。见 migrateUserData() */
+const OLD_APP_NAME_DIR = '减肥姬';
 function earlyLog(msg) {
   try {
     const dir = path.join(process.env.APPDATA || process.env.HOME || '.', APP_NAME_DIR);
@@ -62,7 +64,7 @@ function diag(msg) {
   earlyLog(msg);
 }
 
-diag('--- 启动 --- electron=' + process.versions.electron + ' packaged=' + app.isPackaged);
+diag('--- SlimPal 启动 --- electron=' + process.versions.electron + ' packaged=' + app.isPackaged);
 diag('APP_ROOT=' + core.APP_ROOT);
 
 // 自定义协议必须在 ready 之前登记为特权协议
@@ -87,7 +89,7 @@ function createWindow() {
     minWidth: 380,
     minHeight: 620,
     backgroundColor: '#FCE7EC',
-    title: '减肥姬',
+    title: 'SlimPal',
     icon: ICON,
     autoHideMenuBar: true,
     webPreferences: {
@@ -126,12 +128,12 @@ function createTray() {
   try {
     tray = new Tray(img);
   } catch (e) {
-    console.error('[减肥姬] 托盘创建失败', e);
+    console.error('[SlimPal] 托盘创建失败', e);
     return;
   }
-  tray.setToolTip('减肥姬');
+  tray.setToolTip('SlimPal');
   tray.setContextMenu(Menu.buildFromTemplate([
-    { label: '打开减肥姬', click: () => { if (win) { win.show(); win.focus(); } } },
+    { label: '打开 SlimPal', click: () => { if (win) { win.show(); win.focus(); } } },
     { type: 'separator' },
     { label: '退出', click: () => { quitting = true; app.quit(); } }
   ]));
@@ -141,7 +143,7 @@ function createTray() {
 function showNotification(payload) {
   if (!Notification.isSupported()) return;
   const n = new Notification({
-    title: payload.title || '减肥姬',
+    title: payload.title || 'SlimPal',
     body: payload.body || '',
     icon: ICON
   });
@@ -149,8 +151,29 @@ function showNotification(payload) {
   n.show();
 }
 
+/**
+ * 改名迁移：v1.1 及以前 App 叫「减肥姬」，userData 目录也跟着叫那个名字。
+ * 改成 SlimPal 之后 Electron 会去新目录找数据，用户会以为记录全丢了。
+ * 所以第一次启动时，把旧目录里的数据文件复制过来（复制不是移动，旧的原样保留）。
+ */
+function migrateUserData() {
+  try {
+    const base = process.env.APPDATA || process.env.HOME || '.';
+    const oldFile = path.join(base, OLD_APP_NAME_DIR, 'data.json');
+    const newFile = path.join(app.getPath('userData'), 'data.json');
+    if (fs.existsSync(newFile)) return;          // 新目录已有数据，不覆盖
+    if (!fs.existsSync(oldFile)) return;         // 没有旧数据，第一次装
+    fs.mkdirSync(path.dirname(newFile), { recursive: true });
+    fs.copyFileSync(oldFile, newFile);
+    earlyLog('已从旧目录迁移数据: ' + oldFile + ' → ' + newFile);
+  } catch (e) {
+    earlyLog('迁移旧数据失败（不影响使用）: ' + (e && e.message));
+  }
+}
+
 app.whenReady().then(() => {
   diag('app ready');
+  migrateUserData();
   core.registerProtocol();
   core.registerIpc({
     notify: showNotification,

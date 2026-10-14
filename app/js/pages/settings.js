@@ -1,4 +1,4 @@
-/* 减肥姬 — 设置：改资料与目标、提醒、备份、关于小克 */
+﻿/* 减肥姬 — 设置：改资料与目标、提醒、备份、关于小克 */
 (function (JF) {
   'use strict';
 
@@ -6,6 +6,9 @@
   var S = JF.store;
   var ui = JF.ui;
   var el = U.el;
+
+  /** App 的英文名（中文名是「减肥姬」，见 README） */
+  var APP_NAME = 'SlimPal';
 
   /** 关于页里的制作人署名 */
   var MAKER = '白切';
@@ -119,7 +122,7 @@
   function exportBackup() {
     var json = S.exportJson();
     var stamp = U.todayKey().replace(/-/g, '');
-    var name = '减肥姬-备份-' + stamp + '.json';
+    var name = 'SlimPal-备份-' + stamp + '.json';
     try {
       var blob = new Blob([json], { type: 'application/json' });
       var url = URL.createObjectURL(blob);
@@ -300,7 +303,7 @@
     host.appendChild(ui.card({
       title: '关于',
       children: [
-        el('div', { class: 'kv' }, [el('span', { text: 'App' }), el('b', { text: '减肥姬' })]),
+        el('div', { class: 'kv' }, [el('span', { text: 'App' }), el('b', { text: APP_NAME })]),
         el('div', { class: 'kv' }, [el('span', { text: '当前角色' }), el('b', { text: c.name + ' / ' + c.nameEn })]),
         el('div', { class: 'kv' }, [el('span', { text: '制作人' }), el('b', { text: MAKER })])
       ]

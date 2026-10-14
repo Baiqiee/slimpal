@@ -1,4 +1,4 @@
-/* 减肥姬 — 数据仓库
+﻿/* 减肥姬 — 数据仓库
  *
  * 全部数据存在本机：桌面端是一个 JSON 文件（由 Electron 主进程负责读写），
  * 浏览器与手机端退回 localStorage。两种情况下刷新、关闭、重启都不会丢。
@@ -7,11 +7,11 @@
   'use strict';
 
   var U = JF.util;
-  var KEY = 'jianfeiji.state.v1';
+  var KEY = 'slimpal.state.v1';
   var SCHEMA = 1;
 
   // 桌面端会把下面这个对象注入进来，用来把数据写到真正的文件里
-  var bridge = (typeof window !== 'undefined' && window.jianfeijiNative) || null;
+  var bridge = (typeof window !== 'undefined' && window.slimpalNative) || null;
 
   function blankState() {
     return {

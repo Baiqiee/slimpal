@@ -1,6 +1,6 @@
 {
-  "appId": "com.jianfeiji.app",
-  "appName": "减肥姬",
+  "appId": "com.slimpal.app",
+  "appName": "SlimPal",
   "webDir": "../app",
   "android": {
     "backgroundColor": "#FCE7EC",
