@@ -1,190 +1,221 @@
-# 减肥姬
+<div align="center">
 
-一个只给自己用的、**完全离线的减肥陪伴 App**。不登录、不联网、不上传，所有数据只存在本机。
+# SlimPal
 
-里面住着一位叫 **小克（Chloe）** 的虚拟女孩：你记吃了什么、称体重、写日记，她看着你的真实数据换表情、说话、督促你。
+**完全离线的减肥陪伴 App**
 
-| 文档 | 内容 |
-|---|---|
-| [PRD.md](PRD.md) | **产品需求文档**，后续所有开发以它为准 |
-| [使用说明.md](使用说明.md) | 怎么安装、怎么用、数据怎么备份、常见问题 |
+记录饮食、称体重、写日记 —— 一位叫「小克 / Chloe」的虚拟女孩看着你的真实数据，
+换姿势、说对应的话、督促你坚持下去。
 
----
+不登录 · 不联网 · 无云服务 · 数据只存在你自己的设备上
 
-## 当前状态
+Windows 桌面 · 安卓 · 浏览器，**同一套代码**
 
-v1.0 已完成并验证，产物在 `dist/`：
+<img src="docs/screenshots/onboarding.png" width="200" alt="开场" />
+<img src="docs/screenshots/home.png" width="200" alt="首页" />
+<img src="docs/screenshots/checkin.png" width="200" alt="打卡" />
+<img src="docs/screenshots/stats.png" width="200" alt="数据" />
 
-| 产物 | 说明 |
-|---|---|
-| `SlimPal-1.2.0-Setup.exe` | Windows 安装包（NSIS，约 110 MB） |
-| `SlimPal-1.2-android.apk` | 安卓安装包（自签名，约 8.5 MB） |
-| `win-unpacked/SlimPal.exe` | Windows 免安装版 |
-
-iPhone 版按需求方决定暂不做（原因见 PRD 第 9 节）。
+</div>
 
 ---
 
-## 目录结构
+## 这是什么
+
+市面上的减肥 App 要么逼你每天完成一堆打卡任务，要么把数据传到云端。SlimPal 反着做：
+
+- **记录必须足够轻**：吃一餐就加一条，填「吃了什么 + 多少热量」，不设早餐午餐晚餐，也没有"漏打卡"
+- **反馈必须有人味**：同一句"今天超了 300 千卡"，由她说出来和看一个红色数字，是完全不同的感受
+- **数据必须是自己的**：没有任何网络请求，拔了网线照常用
+
+开头她会问你身高体重和减重目标，按 Mifflin-St Jeor 公式算出基础代谢，再结合活动量与减重速度给出每日热量上限。之后每减掉目标的十分之一，她会专门为你庆祝一次。
+
+## 界面
+
+|  |  |
+|---|---|
+| <img src="docs/screenshots/onboarding.png" width="240" /> | **开场**：她居中淡入，一句一句介绍自己，每句换一个姿势。介绍完，注册表单从下方升上来把她顶上去 |
+| <img src="docs/screenshots/home.png" width="240" /> | **首页**：她本人 + 气泡，下面是今天还能吃多少、目标进度、今天还没做的事。**点她本人会有反应** |
+| <img src="docs/screenshots/checkin.png" width="240" /> | **打卡**：今天吃了什么。每记一笔，23 小时提醒倒计时就重置 |
+| <img src="docs/screenshots/food.png" width="240" /> | **吃**：常吃列表按你实际吃的次数自动排出来，点「再来一份」按上次的热量记上 |
+| <img src="docs/screenshots/food-library.png" width="240" /> | **食物库**：自己建的热量字典，建一次以后一键记账 |
+| <img src="docs/screenshots/diary.png" width="240" /> | **日记**：写心情和文字，自动带上当天的体重和热量 |
+| <img src="docs/screenshots/stats.png" width="240" /> | **数据**：体重曲线（绿虚线是目标）、热量柱状（橙虚线是上限）、阶段统计 |
+| <img src="docs/screenshots/celebrate.png" width="240" /> | **里程碑**：每减掉目标的 1/10，她整屏居中淡入为你庆祝 |
+
+## 技术要点
+
+### 1. 前端零第三方依赖
+
+`app/` 里没有任何框架、没有构建步骤、没有 npm 依赖。折线图、柱状图、进度环、路由、状态管理、组件系统全部手写 —— 图表是直接拼 SVG。
+
+代价是要自己造轮子；好处是这个 App **不会因为某个依赖被删库而跑不起来**，也没有供应链风险。对一个"数据只存本机"的 App 来说，这个取舍是值得的。
+
+### 2. 一套代码，三个平台
+
+```
+app/              纯 HTML/CSS/JS，所有平台共用这一份
+ ├─ build/        Electron 壳 → Windows 安装包（托盘常驻、可关闭的开机自启）
+ └─ android/      Capacitor 壳 → 安卓 APK
+```
+
+界面、数据层、角色系统完全共用；两个壳只负责平台能力（文件读写、系统通知、开机自启）。改一次界面，两端同时生效。
+
+### 3. 数据一定不能丢
+
+这是硬需求，所以做了三层：
+
+| 层 | 做法 |
+|---|---|
+| 主存储 | 桌面端写入 `%APPDATA%\SlimPal\data.json`，**先写临时文件再改名**，避免写一半断电损坏 |
+| 兜底 | 同时写 localStorage；数据文件损坏或缺失时自动退回 |
+| 逃生舱 | 一键导出 JSON 备份 / 导入恢复，卸载重装也不怕 |
+
+改名（减肥姬 → SlimPal）时还加了 `migrateUserData()`：userData 目录跟着 App 名变，第一次以新名字启动会把旧目录的数据复制过来。**这条逻辑是造了一份假数据实测过的**，不是写完就算。
+
+### 4. 角色是可插拔的
+
+一个角色 = 一个文件（`app/js/characters/*.js`），里面是形象素材路径 + 按场景分组的台词库 + 每个场景可用的立绘姿势。
+
+```js
+// 台词和姿势共用同一个随机序号，所以「换一句」的时候姿势也跟着换
+{ scene: 'greetEvening', text: '晚上好，{name}。今天吃了 {kcal} 千卡',
+  poses: ['portrait', 'alt'] }
+```
+
+想加第二位减肥姬，只要放素材、加一个角色文件、在 `index.html` 引一行 —— App 本体、数据层、页面都不用动。
+
+### 5. 素材是自己从设定图里抠出来的
+
+小克的立绘和 9 个表情，全部由 `tools/` 下的脚本从 3 张角色设定图产出：
+
+- 用 `rembg` 的 `isnet-anime` 模型抠图（原图有白底也有深色渐变底）
+- 设定图周围有装饰文字、爱心、相邻卡片的灰边 —— 用**只保留最大连通块**的办法滤掉
+- 表情卡片底部有粉色标签角标会混进裁切结果 —— 按采样到的色值（冷粉，蓝略高于绿）程序化定位标签位置，把裁切底边卡在标签上方
+
+产出 14 个素材，流程可复现：删掉 `app/assets/chloe/` 重跑一遍，13 个文件逐字节一致。
+
+### 6. 测试要能真的发现问题
+
+三套自检脚本，共 **101 项断言**：
+
+| 脚本 | 项数 | 测什么 |
+|---|---|---|
+| `verify-ui.js` | 17 | 界面结构、文字、**像素级位置**、动画是否真的播了 |
+| `verify-app.js` | 71 | 功能端到端：走一遍真实界面流程 |
+| `verify-desktop.js` | 13 | 页面 → 主进程 → 磁盘文件 → 重开读回 |
+
+几个值得一提的断言：
+
+- 「开场小克水平居中」是**量出来的**：比较立绘中心与容器中心的偏差 ≤ 6px
+- 「表单从下顶上来」是**读 `getComputedStyle().animationName`** 验证的，并且断言再翻一页时**不再重播**
+- 「引导页全程不用 Q 版」会真的点完 11 屏，逐屏检查图片 `src`
+- 「点击小克有互动」连点 8 次，断言拿到的回话**必须全部来自 `poke` 那一组台词**（否则就退化成换一句背景台词了）
+- 有一条测试专门验证**测试工具本身可靠**：走引导的循环必须看到步号从 1 连续走到 8，卡住即失败 —— 这里踩过坑，原先循环固定跑 8 次，卡住也会"通过"
+
+## 快速开始
+
+不装任何东西，直接双击 `app/index.html` 就能在浏览器里用。
+
+带桌面壳（托盘、系统通知、数据落盘）：
+
+```powershell
+cd build
+npm install
+npx electron .          # 开发运行
+npx electron shot.js    # 逐页截图到 tools/shots/
+```
+
+自检（改完务必跑一遍）：
+
+```powershell
+cd build
+npx electron verify-ui.js        # 17 项
+npx electron verify-app.js       # 71 项
+npx electron verify-desktop.js   # 13 项
+```
+
+打包：
+
+```powershell
+# Windows 安装包
+cd build
+npx electron-builder --win --x64
+
+# 安卓 APK（需要 JDK 17 + Android SDK 34）
+cd android
+npx cap sync android
+cd android && .\gradlew.bat assembleRelease
+```
+
+> 国内网络下打包若卡在下载，先设镜像：
+> `$env:ELECTRON_MIRROR="https://npmmirror.com/mirrors/electron/"`
+> `$env:ELECTRON_BUILDER_BINARIES_MIRROR="https://npmmirror.com/mirrors/electron-builder-binaries/"`
+
+重新生成角色素材：
+
+```powershell
+python -m pip install rembg onnxruntime   # 首次会下载约 176 MB 的抠图模型
+python tools/build_assets.py              # 生成 app/assets/chloe/ 全套
+python tools/make_icons.py                # App 图标与托盘图标
+python tools/make_android_res.py          # 安卓图标与启动图
+```
+
+## 项目结构
 
 ```
 slimpal/
-├─ app/                     ← 应用本体：纯 HTML/CSS/JS，无构建步骤，三端共用
+├─ app/                     应用本体：纯 HTML/CSS/JS，无构建步骤
 │  ├─ index.html
 │  ├─ css/app.css
 │  ├─ js/
 │  │  ├─ util.js  calc.js  store.js  ui.js  charts.js
 │  │  ├─ chloe-view.js  actions.js  notify.js  onboarding.js  app.js
-│  │  ├─ characters/chloe.js     ← 角色包（加新角色只动这里）
-│  │  └─ pages/                  ← 首页 / 打卡 / 吃 / 日记 / 数据 / 设置
-│  └─ assets/                    ← 图标 + 小克的立绘与表情
-├─ build/                   ← Windows 壳（Electron）
+│  │  ├─ characters/chloe.js     角色包（加新角色只动这里）
+│  │  └─ pages/                  首页 / 打卡 / 吃 / 日记 / 数据 / 设置
+│  └─ assets/                    图标 + 小克的立绘与表情
+├─ build/                   Windows 壳（Electron）+ 三个自检脚本
 │  ├─ main.js  preload.js  desktop-core.js
-│  ├─ shot.js                    ← 开发用：逐页截图
-│  ├─ verify-ui.js               ← 界面回归自检（17 项：结构 / 文字 / 位置 / 动画）
-│  ├─ verify-app.js              ← 功能端到端自检（71 项）
-│  └─ verify-desktop.js          ← 数据链路自检（13 项）
-├─ android/                 ← 安卓壳（Capacitor）
-│  ├─ capacitor.config.json
-│  └─ android/                   ← Capacitor 生成的 Gradle 工程
-├─ tools/                   ← 素材处理与打包辅助脚本（Python / Node）
-├─ source/                  ← 角色原始设定图（一切素材的源头）
+│  ├─ shot.js                    开发用：逐页截图
+│  └─ verify-ui.js  verify-app.js  verify-desktop.js
+├─ android/                 安卓壳（Capacitor）
+├─ tools/                   素材处理与打包辅助脚本（Python / Node）
+├─ source/                  角色原始设定图（一切素材的源头）
+├─ docs/screenshots/        README 用截图
 ├─ PRD.md  使用说明.md
-└─ dist/                    ← 构建产物（已忽略，不进仓库）
+└─ dist/                    构建产物（已忽略）
 ```
 
----
+## 踩过的坑
 
-## 怎么开发
+留在这里，因为每一个都花了不止一小时。
 
-### 跑起来看效果
-
-**最简单**：直接用浏览器打开 `app/index.html`。
-
-**带桌面壳**（有托盘、系统通知、数据落盘）：
-
-```powershell
-cd build
-npm install
-npx electron .
-```
-
-### 改完界面后
-
-| 目标 | 命令 |
+| 现象 | 真正的原因 |
 |---|---|
-| 桌面版生效 | 无需额外步骤，重启 `electron .` 即可 |
-| 安卓版生效 | `cd android` → `npx cap sync android` → 重新打包 |
+| 打包后双击**毫无反应**，启动日志一个字都没有，退出码 0 | 环境变量 `ELECTRON_RUN_AS_NODE=1` 让 Electron 二进制**退化成普通 Node**，没有脚本参数就静默退出。当时误判成 electron-builder 的 asar 完整性问题，还专门关掉了那个安全特性；后来逐项对照才发现关不关都一样 |
+| Gradle：`Unexpected character: '?' @ line 1` | 批量改名时 PowerShell 的 `Set-Content -Encoding UTF8` 写入了 **UTF-8 BOM** |
+| `path may not be null or empty string` | 同上。`keystore.properties` 带 BOM → Java 读到的第一个键名变成 `\uFEFFstoreFile` → 签名配置取到 null。报错信息和编码问题八竿子打不着，很容易查错方向 |
+| 安卓切深色模式后整个配色全花 | Capacitor 默认主题是 `Theme.AppCompat.DayNight`，得改成 `Light` 并关掉 `forceDarkAllowed` |
+| 安卓 `file://` 打不开 | 前端用了 ES module。改成经典 `<script>` 才能 `file://` 直接跑 |
 
-### 自检（改完务必跑一遍）
+主进程顶部有一段**不依赖任何 Electron API** 的早期日志（`earlyLog`）—— 就是被第一个坑逼出来的：那种情况下普通日志因为要先拿 userData 路径，也写不出东西，结果一点线索都没有。
 
-```powershell
-cd build
-npx electron verify-ui.js         # 17 项界面断言：结构 / 文字 / 位置 / 动画是否播了
-npx electron verify-app.js        # 71 项功能断言，走真实界面流程
-npx electron verify-desktop.js    # 13 项数据链路断言，含"重开后读回"
-```
+## 文档
 
-三个脚本都要求输出 **0 项 FAIL**（共 101 项）。
-
-> `verify-ui.js` **故意不关闭 CSS 动画**，因为它要验证转场动画确实播放。
-> 所以量位置之前都会先等动画结束，改这个文件时注意别把等待去掉。
-
-### 逐页截图（肉眼检查界面）
-
-```powershell
-cd build
-npx electron shot.js              # 输出到 tools/shots/
-```
-
----
-
-## 怎么打包
-
-### Windows
-
-```powershell
-cd build
-npm install
-npx electron-builder --win --x64            # 出安装包 + 免安装版
-npx electron-builder --win --x64 --dir      # 只出免安装版（快，调试用）
-```
-
-> 国内网络下若卡在下载，先设镜像：
-> `$env:ELECTRON_MIRROR="https://npmmirror.com/mirrors/electron/"`
-> `$env:ELECTRON_BUILDER_BINARIES_MIRROR="https://npmmirror.com/mirrors/electron-builder-binaries/"`
-
-### 安卓
-
-需要 JDK 17 + Android SDK（platform 34 / build-tools 34.0.0）。
-
-```powershell
-$env:JAVA_HOME="...\jdk-17.0.2"
-$env:ANDROID_HOME="...\android-sdk"
-
-cd android
-npm install
-npx cap sync android
-cd android
-.\gradlew.bat assembleRelease
-```
-
-产物：`android/android/app/build/outputs/apk/release/app-release.apk`
-
----
-
-## 重新生成角色素材
-
-素材是从 `source/` 里的三张原始设定图裁切 + 抠图来的。
-
-```powershell
-python -m pip install rembg onnxruntime    # 抠图模型，首次会下载约 176 MB
-python tools/build_assets.py               # 生成 app/assets/chloe/ 全套
-python tools/make_icons.py                 # 生成 App 图标与托盘图标
-python tools/make_android_res.py           # 生成安卓图标与启动图
-```
-
----
-
-## 几个不能忘的坑
-
-改代码时如果碰到这几处，**别按"常理"改回去**：
-
-| 位置 | 为什么 |
+| 文档 | 内容 |
 |---|---|
-| `app/css` 用经典 `<script>`，不用 ES module | 否则 `file://` 直接打开会加载失败 |
-| 安卓 `styles.xml` 必须是 `Theme.AppCompat.Light` + `forceDarkAllowed=false` | 否则系统深色模式会把整个配色搞花 |
-| 安卓 `AndroidManifest.xml` 里的 `screenOrientation="portrait"` | 横屏布局没设计过 |
-| 前端不引任何第三方 JS 库，图表手写 SVG | 保证完全离线、无供应链风险 |
+| [PRD.md](PRD.md) | 产品需求文档：目标与场景、页面框架、每个模块的职责与数据、计算公式、提醒算法、**26 条可实际检查的验收标准** |
+| [使用说明.md](使用说明.md) | 安装步骤（含安卓后台权限设置）、五个页面怎么用、数据备份、常见问题 |
+| [source/README.md](source/README.md) | 角色原始设定图说明与素材再生成流程 |
 
-### 排查"打包后双击没反应"的正确姿势
+## 技术栈
 
-**如果你在 DSH 会话里测试打包后的程序**，先确认这个环境变量没被带进去：
-
-```powershell
-Remove-Item Env:ELECTRON_RUN_AS_NODE -ErrorAction SilentlyContinue
-```
-
-`ELECTRON_RUN_AS_NODE=1` 会让任何 Electron 二进制（包括打包好的 App）**退化成普通 Node**。
-没有脚本参数时它就无声无息地 `exit 0`，`main.js` 一行都不会执行，
-表现就是"双击没反应、启动日志一个字都没有"。
-
-> 这个坑踩过一次：当时误判成 electron-builder 的 asar 完整性资源有问题，
-> 还特意加了 `disableAsarIntegrity: true` 去关它。后来逐项对照才发现
-> 关不关都一样能跑，真正的区别只是我有的命令清了那个变量、有的没清。
-> 现在 asar 完整性保持开启（默认行为），不再为这个误判关掉安全特性。
-
-**用户自己双击桌面图标时不会有这个变量**，所以这只影响开发时的排查。
-
-主进程现在有一段**不依赖 Electron 的早期日志**（`main.js` 顶部的 `earlyLog`），
-写进 `%APPDATA%\减肥姬\startup.log`。哪怕 Electron 自己起不来也会留下痕迹，
-先看这个文件。
-
-更多约束见 [PRD.md](PRD.md) 第 8.2 节。
+`原生 JavaScript` · `Electron` · `Capacitor` · `Node.js` · `Python (Pillow / rembg / scipy)` · `Gradle` · `NSIS`
 
 ---
 
-## 密钥提醒
+<div align="center">
 
-安卓签名文件 `android/slimpal.keystore` 与 `android/android/keystore.properties`
-**已被 .gitignore 排除**，请单独备份。丢了就不能对已装的 App 做覆盖升级。
+**制作人：白切**
+
+</div>
