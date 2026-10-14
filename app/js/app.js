@@ -7,12 +7,65 @@
   var ui = JF.ui;
   var el = U.el;
 
+  // 底部导航的图标：手写 SVG，不用 emoji。
+  // 原因有两个：
+  //   1. emoji 在 Windows 和安卓上长得完全不一样，四个里只要混进一个
+  //      单色文字符号（原来的「✎」）就会显得格格不入；
+  //   2. emoji 的颜色固定，没法跟着选中态变色。
+  // 统一成 currentColor 描边的线性图标后，四个风格一致，选中时一起变粉。
+  var NAV_ICONS = {
+    // 碗 + 热气
+    food: [
+      'M3.6 11.6h16.8a8.4 8.4 0 0 1-8.4 8.4 8.4 8.4 0 0 1-8.4-8.4z',
+      'M9.3 8.8c0-1.6 1.3-2.1 1.3-3.6',
+      'M13.8 8.8c0-1.6 1.3-2.1 1.3-3.6'
+    ],
+    // 圆圈 + 勾
+    checkin: [
+      'M20.4 12a8.4 8.4 0 1 1-16.8 0 8.4 8.4 0 0 1 16.8 0z',
+      'M8.4 12.2l2.7 2.7 5.2-6'
+    ],
+    // 本子
+    diary: [
+      'M6.4 3.8h10.8a1.8 1.8 0 0 1 1.8 1.8v12.8a1.8 1.8 0 0 1-1.8 1.8H6.4',
+      'M6.4 3.8A1.8 1.8 0 0 0 4.6 5.6v12.8a1.8 1.8 0 0 0 1.8 1.8',
+      'M9.4 8.7h6',
+      'M9.4 12.3h4.1'
+    ],
+    // 柱状图
+    stats: [
+      'M5 20.2v-6.4',
+      'M12 20.2V5.2',
+      'M19 20.2v-9.4',
+      'M3.2 20.2h17.6'
+    ]
+  };
+
+  var SVG_NS = 'http://www.w3.org/2000/svg';
+  function navIcon(kind) {
+    var svg = document.createElementNS(SVG_NS, 'svg');
+    svg.setAttribute('viewBox', '0 0 24 24');
+    svg.setAttribute('width', '23');
+    svg.setAttribute('height', '23');
+    svg.setAttribute('fill', 'none');
+    svg.setAttribute('stroke', 'currentColor');
+    svg.setAttribute('stroke-width', '1.9');
+    svg.setAttribute('stroke-linecap', 'round');
+    svg.setAttribute('stroke-linejoin', 'round');
+    (NAV_ICONS[kind] || []).forEach(function (d) {
+      var p = document.createElementNS(SVG_NS, 'path');
+      p.setAttribute('d', d);
+      svg.appendChild(p);
+    });
+    return svg;
+  }
+
   var TABS = [
-    { id: 'food',    page: 'food',    label: '吃',   glyph: '🍚' },
-    { id: 'checkin', page: 'checkin', label: '打卡', glyph: '✎' },
-    { id: 'home',    page: 'home',    label: '首页', glyph: '♥', center: true },
-    { id: 'diary',   page: 'diary',   label: '日记', glyph: '📖' },
-    { id: 'stats',   page: 'stats',   label: '数据', glyph: '📈' }
+    { id: 'food',    page: 'food',    label: '吃',   icon: 'food' },
+    { id: 'checkin', page: 'checkin', label: '打卡', icon: 'checkin' },
+    { id: 'home',    page: 'home',    label: '首页', center: true },
+    { id: 'diary',   page: 'diary',   label: '日记', icon: 'diary' },
+    { id: 'stats',   page: 'stats',   label: '数据', icon: 'stats' }
   ];
 
   var current = 'home';
@@ -31,7 +84,7 @@
           el('img', { class: 'tab-face', src: JF.chloe.active().assets.navFace, alt: t.label })
         ]);
       } else {
-        glyph = el('div', { class: 'tab-glyph', text: t.glyph });
+        glyph = el('div', { class: 'tab-glyph' }, [navIcon(t.icon)]);
       }
       tabEl.appendChild(el('button', {
         class: 'tab' + (t.center ? ' center' : '') + (on ? ' on' : ''),

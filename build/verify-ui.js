@@ -380,6 +380,64 @@ test('#9 导航正中间是小克的脸部特写，不是 Q 版', async () => {
     + (v.chibiAnywhere.length ? '（页面别处仍有 Q 版空态图：' + v.chibiAnywhere.join('、') + '）' : '');
 });
 
+test('#10 四个导航图标风格统一', async () => {
+  await resetToOnboarding();
+  await seedAndEnter();
+  // 首页那个是中间的头像钮，没有 SVG；切到一个侧边标签才能比"选中 vs 未选中"
+  await js(`JF.app.go('checkin'); 1`);
+  await wait(300);
+  const v = JSON.parse(await js(`(function(){
+    var tabs = [].slice.call(document.querySelectorAll('.tabbar .tab:not(.center)'));
+    var info = tabs.map(function(t){
+      var svg = t.querySelector('.tab-glyph svg');
+      var glyph = t.querySelector('.tab-glyph');
+      return {
+        label: (t.querySelector('.tab-label')||{}).textContent || '',
+        hasSvg: !!svg,
+        paths: svg ? svg.querySelectorAll('path').length : 0,
+        viewBox: svg ? svg.getAttribute('viewBox') : null,
+        strokeWidth: svg ? svg.getAttribute('stroke-width') : null,
+        stroke: svg ? svg.getAttribute('stroke') : null,
+        linecap: svg ? svg.getAttribute('stroke-linecap') : null,
+        textLeft: glyph ? glyph.textContent.trim() : '',
+        w: svg ? Math.round(svg.getBoundingClientRect().width) : 0
+      };
+    });
+    // 选中态与未选中态的描边颜色（currentColor 是否生效）
+    var onTab = document.querySelector('.tabbar .tab.on:not(.center)');
+    var offTab = document.querySelector('.tabbar .tab:not(.on):not(.center)');
+    var cs = function(t){
+      var s = t && t.querySelector('.tab-glyph svg');
+      return s ? getComputedStyle(s).stroke : null;
+    };
+    return JSON.stringify({
+      info: info,
+      onStroke: cs(onTab), offStroke: cs(offTab),
+      onLabel: onTab ? onTab.querySelector('.tab-label').textContent : ''
+    });
+  })()`));
+
+  assertEqual(v.info.length, 4, '侧边导航标签数');
+  const noSvg = v.info.filter(t => !t.hasSvg).map(t => t.label);
+  assertEqual(noSvg.length, 0, '这些标签还是文字/emoji 图标：' + noSvg.join('、'));
+  const leftover = v.info.filter(t => t.textLeft.length > 0).map(t => t.label + ':' + t.textLeft);
+  assertEqual(leftover.length, 0, '图标位置还残留字符：' + leftover.join('、'));
+  const empty = v.info.filter(t => t.paths === 0).map(t => t.label);
+  assertEqual(empty.length, 0, '这些图标是空的：' + empty.join('、'));
+
+  const uniq = (key) => [...new Set(v.info.map(t => t[key]))];
+  assertEqual(uniq('viewBox').length, 1, '四个图标的 viewBox 不一致：' + uniq('viewBox').join(' / '));
+  assertEqual(uniq('strokeWidth').length, 1, '四个图标的线宽不一致：' + uniq('strokeWidth').join(' / '));
+  assertEqual(uniq('stroke').length, 1, '四个图标的描边方式不一致：' + uniq('stroke').join(' / '));
+  assertEqual(uniq('linecap').length, 1, '四个图标的线头样式不一致：' + uniq('linecap').join(' / '));
+  assertEqual(uniq('stroke')[0], 'currentColor', '图标没有用 currentColor，选中时不会跟着变色');
+  assertEqual(uniq('w').length, 1, '四个图标大小不一致：' + uniq('w').join(' / '));
+  assert(v.onStroke && v.offStroke && v.onStroke !== v.offStroke,
+    '选中态和未选中态的图标颜色一样（' + v.onStroke + ' / ' + v.offStroke + '），看不出选中了哪个');
+  return '4 个图标：' + v.info.map(t => t.label + '(' + t.paths + '段)').join(' ') +
+    '；选中色 ' + v.onStroke + ' vs 未选中 ' + v.offStroke;
+});
+
 // ---------------------------------------------------------------- 运行环境
 
 let win = null;

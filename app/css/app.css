@@ -106,7 +106,7 @@ body { display: flex; justify-content: center; }
   gap: 2px; color: var(--ink-3); font-size: 11px; font-family: inherit;
   padding: 0; position: relative;
 }
-.tab-glyph { font-size: 19px; line-height: 1; }
+.tab-glyph { font-size: 19px; line-height: 1; display: flex; align-items: center; justify-content: center; height: 23px; }
 .tab.on { color: var(--pink-deep); font-weight: 600; }
 
 /* 中间的首页做成抬起的圆钮 */
